@@ -31,11 +31,13 @@ Last updated: 6 April 2026
 - Status: HOLDING — waiting Domain API + PropTechData approvals
 
 ### SubdivideIQ — pre-launch
-- Repo: stevenpicton1979/subdivideiq (to be created)
-- Domain: TBD — will buy at launch
-- Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Status: IN DESIGN — product brief, backlog and data sources in this repo
-- See: SUBDIVIDEIQ.md, SUBDIVIDEIQ_BACKLOG.md, SUBDIVIDEIQ_DATA_SOURCES.md
+- Repo: stevenpicton1979/subdivideiq ✅ created
+- Domain: TBD at launch
+- Stack: Vanilla HTML/CSS/JS + Vercel serverless + Supabase fzykfxesznyiigoyeyed
+- Pricing: $79 AUD confirmed
+- Sprint 1: complete (S1-1 to S1-5 done, full Brisbane data loads pending ~50 min)
+- Sprint 2: in progress — feasibility checks engine (zone, flood, elevation, stormwater, character, lot size)
+- Status: IN BUILD — Sprint 3 (payment + report) and Sprint 4 (launch prep) remaining
 
 ## Infrastructure
 - Supabase project: fzykfxesznyiigoyeyed

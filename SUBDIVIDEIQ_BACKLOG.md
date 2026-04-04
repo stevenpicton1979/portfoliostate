@@ -1,6 +1,6 @@
 # SubdivideIQ — BACKLOG
 Last updated: 6 April 2026
-Repo: stevenpicton1979/subdivideiq (to be created)
+Repo: stevenpicton1979/subdivideiq ✅ CREATED
 
 ## How to use this file
 Start Claude Code in the subdivideiq repo and say:
@@ -10,14 +10,14 @@ Start Claude Code in the subdivideiq repo and say:
 
 ## SPRINT 1 — Foundation & Lot Data
 
-### [ ] S1-1: Create repo and project scaffold
+### [x] S1-1: Create repo and project scaffold
 - Create repo: stevenpicton1979/subdivideiq on GitHub
 - Copy scaffold from buyerside repo (same vanilla HTML/CSS/JS + Vercel serverless structure)
 - Set up Vercel project linked to repo
 - Create .env.example with: SUPABASE_URL, SUPABASE_SERVICE_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, MAPBOX_TOKEN
 - Create CLAUDE.md with trusted domains
 
-### [ ] S1-2: Supabase tables
+### [x] S1-2: Supabase tables
 In project fzykfxesznyiigoyeyed, create:
 
 subdivide_parcels:
@@ -48,20 +48,20 @@ subdivide_reports:
 
 Use $func$ not $$ for Supabase SQL functions.
 
-### [ ] S1-3: Load BCC parcel data
+### [x] S1-3: Load BCC parcel data
 - Download GeoJSON from BCC Open Data parcel dataset
 - Write scripts/load-parcels.js
 - Transform to WGS84, load into subdivide_parcels
 - Verify: query for 6 Glenheaton Court Carindale — should return lot polygon + ~1086m² area
 
-### [ ] S1-4: Load BCC stormwater data
+### [x] S1-4: Load BCC stormwater data
 - Download stormwater pipes GeoJSON from BCC Open Data
 - Download surface drains GeoJSON from BCC Open Data
 - Write scripts/load-sw-pipes.js and scripts/load-sw-drains.js
 - Load into respective tables
 - Verify: query pipes near 6 Glenheaton Court — should find the 825mm pipe from the hydraulics report
 
-### [ ] S1-5: Address geocoding function
+### [x] S1-5: Address geocoding function
 - Create api/geocode.js
 - Input: address string
 - Geocode via Mapbox → lat/lng

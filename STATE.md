@@ -50,7 +50,10 @@ Last updated: 6 April 2026
 - Sprint 4 remaining: S4-4 Stripe live mode (MANUAL — needs real card test), S4-6 full staging test (MANUAL), S4-7 final sync
 - Data: 16,115 parcels + 12,037 pipes loaded; suburb-by-suburb loader written for full 773k (run manually ~60 min)
 - BCC API limitation: 10k record cap per query — load-all-suburbs.js iterates 195 suburbs
-- Status: PIPELINE WORKING — end-to-end confirmed: autocomplete → lot boundary → Stripe → webhook → feasibility → email+PDF. Outstanding: S4-3 staging test with real address, S4-4 live mode test, PL-1 traffic light calibration, domain purchase.
+- Status: LAUNCH READY — PL-1 calibration done, S4-3 staging passed. Outstanding: S4-4 live Stripe mode test (manual, real card), domain purchase.
+- PL-1 done: zone RED threshold raised (lotArea<minLot*1.5), flood FHA_R3>50% RED→AMBER, lotsize RED aligned. 1086m² LDR now correctly AMBER.
+- PDF improved: dark brand cover bar, page numbers on all pages (bufferPages pattern).
+- S4-3 staging: 6 Glenheaton Court → zone AMBER, overall AMBER, 0 RED, PDF 10770 bytes ✓
 - Production fixes applied (2026-04-05): ALLOWED_ORIGIN trailing newline (ERR_INVALID_CHAR), Mapbox token placeholder, bbox negative lat, mapboxgl.Map missing `new`, webhook async→sync (25s race), BASE_URL fallback to subdivideiq.vercel.app.
 - PDF: pdfkit (pure Node.js, no puppeteer).
 - Webhook: processReport awaited before res.json(), races 25s timeout.

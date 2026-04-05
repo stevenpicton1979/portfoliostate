@@ -44,13 +44,14 @@ Last updated: 6 April 2026
 - Pricing: $79 AUD
 - Sprint 1: COMPLETE
 - Sprint 2: COMPLETE — 6 feasibility checks + aggregator
-- Sprint 2B: PENDING — contaminated land, infrastructure charges, powerline easements, acid sulfate soils
+- Sprint 2B: COMPLETE — contaminated land (AMBER stub, no public QLD API), infrastructure charges ($28,730/lot urban), powerline easements (live ArcGIS BCC City Plan), acid sulfate soils (live ArcGIS). All 4 integrated into feasibility aggregator, PDF, email, confirmation page.
 - Sprint 3: COMPLETE — Stripe checkout, webhook (raw body, sig verify, async), pdfkit PDF, Mapbox GL frontend, confirmation page with polling
 - Sprint 4: MOSTLY COMPLETE — Vercel env vars ✅ CLAUDE.md ✅ suburb loader ✅ Jest 6/6 ✅ deployed ✅
 - Sprint 4 remaining: S4-4 Stripe live mode (MANUAL — needs real card test), S4-6 full staging test (MANUAL), S4-7 final sync
 - Data: 16,115 parcels + 12,037 pipes loaded; suburb-by-suburb loader written for full 773k (run manually ~60 min)
 - BCC API limitation: 10k record cap per query — load-all-suburbs.js iterates 195 suburbs
 - Status: LAUNCH READY — pending Stripe live mode confirmation + full data load
+- Production fix (2026-04-05): ALLOWED_ORIGIN Vercel env var had trailing newline → ERR_INVALID_CHAR on all endpoints. Fixed with .trim() in all 7 API files. Deployed commit 8d002b1.
 - BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as SUBDIVIDEIQ_BACKLOG.md)
 
 ## Infrastructure

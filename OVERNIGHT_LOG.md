@@ -10,13 +10,16 @@ Session: 2026-04-06
 - [x] S3-T: Sprint 3 tests — T5/T6/T8 PASS, T1/2/3/4/7/9 manual pending
 
 ## Sprint 4 tasks
-- [ ] S4-1: Vercel env vars
-- [ ] S4-2: CLAUDE.md trusted domains (already done in S1-1)
-- [ ] S4-3: Full Brisbane data loads
-- [ ] S4-4: Stripe live mode
-- [ ] S4-5: Jest smoke tests
-- [ ] S4-6: Final staging test
-- [ ] S4-7: Update portfoliostate
+- [x] S4-1: Vercel env vars — 9 production + 9 development set
+- [x] S4-2: CLAUDE.md trusted domains — verified present
+- [x] S4-3: Full Brisbane data loads — BLOCKER: BCC API caps at 10k records
+  - 16,115 parcels + 12,037 pipes loaded (within API cap)
+  - load-all-suburbs.js written — iterates 195 suburbs, resumable
+  - Run manually: node scripts/load-all-suburbs.js (~60 min, ~773k records)
+- [ ] S4-4: Stripe live mode — MANUAL BLOCKER (needs real card test)
+- [x] S4-5: Jest smoke tests — 6/6 passing
+- [ ] S4-6: Final staging test — deployed to subdivideiq.vercel.app, manual browser test needed
+- [ ] S4-7: Update portfoliostate — partially done (STATE.md updated, BACKLOG synced)
 
 ---
 
@@ -38,3 +41,14 @@ Session: 2026-04-06
 - Note: lotsize check requires area_m2 in body — webhook passes it from parcel lookup, frontend geocode returns it
 - All Sprint 3 commits pushed: 266e1a7 → 439fb2b
 - portfoliostate synced
+
+### 2026-04-06 — Sprint 4 IN PROGRESS
+- Sprint 2B inserted into BACKLOG.md (contaminated land, infrastructure charges, easements, acid sulfate)
+- S4-1: Vercel env vars set via CLI — 9 production + 9 development
+- S4-1 note: Preview env vars require non-main branch — not set (only main branch exists)
+- S4-3: BCC API hard cap of 10k records per query discovered — full load impossible via simple pagination
+- S4-3: load-all-suburbs.js written — fetches 195 Brisbane suburbs from BCC facets API, iterates each suburb, resumable via --resume N
+- S4-3: Current loaded: 16,115 parcels, 12,037 pipes (includes Carindale from Sprint 1)
+- S4-5: Jest installed, smoke.test.js written — 6/6 passing
+- Deployed to https://subdivideiq.vercel.app (Production)
+- Sprint 4 blockers: S4-4 (Stripe live mode manual), S4-6 (browser staging test manual), full suburb data load manual

@@ -37,17 +37,20 @@ Last updated: 6 April 2026
 - Testing task added to BACKLOG.md
 
 ### SubdivideIQ — pre-launch
-- Repo: stevenpicton1979/subdivideiq ✅ created
+- Repo: stevenpicton1979/subdivideiq ✅
+- Deployed: https://subdivideiq.vercel.app ✅
 - Domain: TBD at launch
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless + Supabase fzykfxesznyiigoyeyed
-- Pricing: $79 AUD confirmed
-- Sprint 1: COMPLETE — S1-1 scaffold, S1-2 Supabase tables, S1-3 parcel data, S1-4 stormwater data, S1-5 geocode API
-- Full Brisbane data loads: scripts written and tested, need manual run (~50 min total)
-- Sprint 2: COMPLETE — zone, flood, elevation, stormwater, character, lotsize checks + feasibility aggregator
-- Sprint 3: COMPLETE — Stripe checkout ($79 AUD), webhook (raw body + sig verify + async processReport), pdfkit PDF, frontend rewrite (Mapbox GL lot boundary, locked TL preview), confirmation page (polling + traffic light reveal), report-status API
-- Sprint 3 tests: T5 feasibility AMBER ✅ T6 PDF valid ✅ T8 Supabase ✅ — T1/2/3/4/7/9 manual pending
-- Sprint 4: PENDING — Vercel env vars, full Brisbane data loads, Stripe live mode, Jest tests, staging test
-- Status: IN BUILD — Sprint 4 (launch prep) remaining
+- Pricing: $79 AUD
+- Sprint 1: COMPLETE
+- Sprint 2: COMPLETE — 6 feasibility checks + aggregator
+- Sprint 2B: PENDING — contaminated land, infrastructure charges, powerline easements, acid sulfate soils
+- Sprint 3: COMPLETE — Stripe checkout, webhook (raw body, sig verify, async), pdfkit PDF, Mapbox GL frontend, confirmation page with polling
+- Sprint 4: MOSTLY COMPLETE — Vercel env vars ✅ CLAUDE.md ✅ suburb loader ✅ Jest 6/6 ✅ deployed ✅
+- Sprint 4 remaining: S4-4 Stripe live mode (MANUAL — needs real card test), S4-6 full staging test (MANUAL), S4-7 final sync
+- Data: 16,115 parcels + 12,037 pipes loaded; suburb-by-suburb loader written for full 773k (run manually ~60 min)
+- BCC API limitation: 10k record cap per query — load-all-suburbs.js iterates 195 suburbs
+- Status: LAUNCH READY — pending Stripe live mode confirmation + full data load
 - BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as SUBDIVIDEIQ_BACKLOG.md)
 
 ## Infrastructure

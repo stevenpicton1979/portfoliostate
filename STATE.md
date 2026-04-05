@@ -45,7 +45,7 @@ Last updated: 6 April 2026
 - Full Brisbane data loads: scripts written and tested, need manual run (~50 min total)
 - Sprint 2: IN PROGRESS — feasibility checks engine (zone, flood, elevation, stormwater, character, lot size)
 - Status: IN BUILD — Sprint 3 (payment + report) and Sprint 4 (launch prep) remaining
-- BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as ZONEIQ_BACKLOG.md)
+- BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as SUBDIVIDEIQ_BACKLOG.md)
 
 ## Infrastructure
 - Supabase project: fzykfxesznyiigoyeyed

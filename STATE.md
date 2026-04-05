@@ -43,8 +43,11 @@ Last updated: 6 April 2026
 - Pricing: $79 AUD confirmed
 - Sprint 1: COMPLETE — S1-1 scaffold, S1-2 Supabase tables, S1-3 parcel data, S1-4 stormwater data, S1-5 geocode API
 - Full Brisbane data loads: scripts written and tested, need manual run (~50 min total)
-- Sprint 2: IN PROGRESS — feasibility checks engine (zone, flood, elevation, stormwater, character, lot size)
-- Status: IN BUILD — Sprint 3 (payment + report) and Sprint 4 (launch prep) remaining
+- Sprint 2: COMPLETE — zone, flood, elevation, stormwater, character, lotsize checks + feasibility aggregator
+- Sprint 3: COMPLETE — Stripe checkout ($79 AUD), webhook (raw body + sig verify + async processReport), pdfkit PDF, frontend rewrite (Mapbox GL lot boundary, locked TL preview), confirmation page (polling + traffic light reveal), report-status API
+- Sprint 3 tests: T5 feasibility AMBER ✅ T6 PDF valid ✅ T8 Supabase ✅ — T1/2/3/4/7/9 manual pending
+- Sprint 4: PENDING — Vercel env vars, full Brisbane data loads, Stripe live mode, Jest tests, staging test
+- Status: IN BUILD — Sprint 4 (launch prep) remaining
 - BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as SUBDIVIDEIQ_BACKLOG.md)
 
 ## Infrastructure

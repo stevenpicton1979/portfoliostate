@@ -52,6 +52,7 @@ Last updated: 6 April 2026
 - BCC API limitation: 10k record cap per query — load-all-suburbs.js iterates 195 suburbs
 - Status: LAUNCH READY — pending Stripe live mode confirmation + full data load
 - Production fix (2026-04-05): ALLOWED_ORIGIN Vercel env var had trailing newline → ERR_INVALID_CHAR on all endpoints. Fixed with .trim() in all 7 API files. Deployed commit 8d002b1.
+- Geocode + map fixes (2026-04-05): Mapbox token now fetched from /api/config (was hardcoded placeholder). bbox negative lat fix for Brisbane. mapboxgl.Map missing `new` keyword fixed. Geocode working, map rendering fixed.
 - BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as SUBDIVIDEIQ_BACKLOG.md)
 
 ## Infrastructure

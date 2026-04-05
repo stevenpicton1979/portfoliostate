@@ -1,9 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 6 April 2026
-State management: Each product repo contains its own BACKLOG.md as source of truth.
-This file is the portfolio overview only — one section per product.
-
----
+Last updated: 5 April 2026
 
 ## Products
 
@@ -11,95 +7,77 @@ This file is the portfolio overview only — one section per product.
 - Repo: stevenpicton1979/whatcanibuild
 - Live: whatcanibuild.com.au
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Stripe: LIVE mode, $19.99 AUD
+- Stripe: LIVE mode, $19.99 AUD, webhook on checkout.session.completed
 - Supabase: fzykfxesznyiigoyeyed, table: wcib_reports
-- Resend: hello@clearoffer.com.au
+- Resend: sending from hello@clearoffer.com.au (temporary — cannot verify whatcanibuild.com.au while on Resend free tier, 1-domain limit currently used by clearoffer.com.au)
 - Status: LAUNCHED — posted on r/Brisbane
-- Known issues: calls zoneiq-sigma.vercel.app not zoneiq.com.au (server-side redirect issue)
-- Backlog: stevenpicton1979/whatcanibuild — BACKLOG.md
+- Known issues: ZoneIQ URL must be zoneiq-sigma.vercel.app not zoneiq.com.au (redirect issue on server-side fetch)
 
 ### ZoneIQ — zoneiq.com.au
 - Repo: stevenpicton1979/zoneiq
 - Live: zoneiq.com.au + zoneiq-sigma.vercel.app
 - Stack: Next.js 14 + Vercel + Supabase PostGIS
-- Coverage: Brisbane, Gold Coast, Moreton Bay, Sunshine Coast, Ipswich (S11), Logan (S12 — 6,920 polygons), Redland (S13 — 6,266 polygons)
-- Total polygons: 189,751 (175,049 original SEQ + 14,702 Ipswich/Logan/Redland)
-- Overlays: flood, character, schools, bushfire, heritage, aircraft noise (BNE + Archerfield + Gold Coast, 14 polygons)
-- RapidAPI: listed and public, Basic/Pro/Ultra tiers
-- Status: LAUNCHED — Sprints 1–13 complete, Sprint 14 in progress (contaminated land API investigation)
-- Backlog: stevenpicton1979/zoneiq — BACKLOG.md
+- Coverage: Brisbane, Gold Coast, Moreton Bay, Sunshine Coast = 175,049 polygons
+- Overlays: flood, character, schools, bushfire (Sprint 8 built overnight)
+- RapidAPI: listed and public, proxy auth working, RAPIDAPI_PROXY_SECRET in Vercel env
+- DECISIONS.md: exists in repo, documents key decisions D38–D40
+- Nearest polygon fallback: plpgsql function confirmed added to Supabase
+- Show HN: planned after RapidAPI listing — NOT YET DONE
+- Status: LAUNCHED on RapidAPI
+- Sprint queue: Sprint 9 heritage overlays (next), Sprint 10 aircraft noise, Sprint 11-13 Ipswich/Logan/Redland
 
 ### ClearOffer — clearoffer.com.au
-- Repo: stevenpicton1979/buyerside (main branch)
-- Live: clearoffer.com.au
+- Repo: stevenpicton1979/buyerside (main branch, not master)
+- Live: clearoffer.com.au + buyerside.stevenpicton.ai
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Stripe: test mode only
-- Status: HOLDING — waiting Domain API + PropTechData approvals
-- Backlog: stevenpicton1979/buyerside — BACKLOG.md
+- Stripe: test mode, $149 AUD Scout Report product
+- Domain API: Domain Listings Management Sandbox active; full API access pending approval
+- PropTechData: credentials pending (emailed hello@proptechdata.com.au)
+- Address autocomplete: Nominatim (not Mapbox)
+- Scout Report: fully working — renders with ZoneIQ data, email gate, Stripe checkout ($149 AUD test mode), Claude AI Buyer's Brief streaming
+- Status: HOLDING — waiting Domain API full access + PropTechData credentials
 
-### SubdivideIQ — subdivideiq.vercel.app (pre-launch)
-- Repo: stevenpicton1979/subdivideiq
-- Live: https://subdivideiq.vercel.app (domain not purchased yet)
+### SubdivideIQ — pre-launch
+- Repo: stevenpicton1979/subdivideiq (to be created)
+- Domain: TBD — will buy at launch
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Supabase: fzykfxesznyiigoyeyed — tables: subdivide_parcels (partial Brisbane), subdivide_sw_pipes, subdivide_sw_drains, subdivide_reports
-- Stripe: TEST mode — sandbox confirmed working end-to-end, live keys not yet configured
-- Resend: hello@clearoffer.com.au
-- Feasibility checks: zone, flood, elevation, stormwater, character, lotsize, contaminated, infrastructure, easements, acid sulfate (10 checks, all working)
-- Data architecture (Option C — decided April 2026): live API queries at runtime, not bulk Supabase storage
-  - Lot boundaries: BCC Open Data API (live query)
-  - Elevation/slope: QLD ArcGIS ImageServer REST (live query)
-  - Stormwater: BCC Open Data API (live query)
-  - Flood/zone overlays: ZoneIQ/Supabase (already stored — exception, reuse existing data)
-- Status: PIPELINE CONFIRMED WORKING (6 April 2026) — pre-launch
-- Pending: ARCH-1 cadastral API decision, domain purchase, live Stripe, launch
-- Backlog: stevenpicton1979/subdivideiq — BACKLOG.md
-
----
+- Status: IN DESIGN — product brief, backlog and data sources in this repo
+- See: SUBDIVIDEIQ.md, SUBDIVIDEIQ_BACKLOG.md, SUBDIVIDEIQ_DATA_SOURCES.md
 
 ## Infrastructure
 - Supabase project: fzykfxesznyiigoyeyed
-- Tables: zone_geometries, zone_rules, flood_overlays, character_overlays, school_catchments, bushfire_overlays, heritage_overlays, noise_overlays, wcib_reports, api_keys, api_usage, subdivide_parcels, subdivide_sw_pipes, subdivide_sw_drains, subdivide_reports
+- Tables: zone_geometries, zone_rules, flood_overlays, character_overlays, school_catchments, bushfire_overlays, wcib_reports, api_keys, api_usage
 - Vercel team: stevenpicton1979s-projects
 - VentraIP domains: zoneiq.com.au, whatcanibuild.com.au, clearoffer.com.au
-- Stripe: one account — WhatCanIBuild live, SubdivideIQ test, ClearOffer test
-- Resend: clearoffer.com.au verified (free tier, 1 domain limit)
+- VentraIP DNS pattern: A record → 76.76.21.21, CNAME → cname.vercel-dns.com
+- Stripe: same account, WhatCanIBuild live, ClearOffer test
+- Resend: clearoffer.com.au verified (free tier, 1-domain limit — blocks whatcanibuild.com.au verification)
 - RapidAPI: ZoneIQ listed, public, Basic/Pro/Ultra tiers
+- Nominatim: used for address autocomplete in ClearOffer (not Mapbox)
 
----
+## Overnight build system
+- Each product repo has BACKLOG.md — Claude Code reads and executes tasks autonomously
+- Start: claude --dangerously-skip-permissions in repo terminal
+- Brief: "Read BACKLOG.md and work through every [ ] task. Do not stop. Mark [x] when done. Move to next task automatically."
+- OVERNIGHT_LOG.md created per session with timestamps
+- Trusted domains added to CLAUDE.md to avoid fetch permission prompts
 
 ## Key gotchas
 - Always use $func$ not $$ for Supabase SQL
-- Never combine cd and git in same command — use git -C /path instead
+- Never combine cd and git in same command
 - WhatCanIBuild calls zoneiq-sigma.vercel.app NOT zoneiq.com.au
 - Gold Coast zone codes are full words not abbreviations
 - Moreton Bay + Sunshine Coast: ArcGIS auto-reprojects WGS84 (no ST_Transform needed)
 - Gold Coast: required ST_Transform from EPSG:28356
 - Supabase v2: use try/catch not .catch() chaining
 - buyerside repo uses main branch not master
-- SubdivideIQ webhook must await processReport before res.json() (25s race timeout)
-- Vercel env vars set via CLI pipe can have \n corruption — always verify after setting
-- MAPBOX_TOKEN fetched from /api/config endpoint — not injected at build time
 - Vercel preview deployments need test Stripe keys scoped to Preview environment
 
----
-
-## Overnight build system
-- Start Claude Code: claude --dangerously-skip-permissions in repo terminal
-- Brief: "Read BACKLOG.md and work through every [ ] task. Do not stop. Mark [x] when done. Move to next task automatically."
-- Each session creates/updates OVERNIGHT_LOG.md in the product repo with timestamps
-- Trusted domains listed in CLAUDE.md per repo
-
----
-
-## State management
-- This file (STATE.md) = portfolio overview only — one-liner status per product
-- Each product repo BACKLOG.md = source of truth for that product's tasks
-- No duplicate backlog files in portfoliostate
-- Update STATUS line in this file after each significant session
-
----
+## Portfolio state repo
+- Repo: stevenpicton1979/portfoliostate
+- Purpose: meta-repo for cross-product docs only — no product code
+- Contains STATE.md + product docs for anything in development
 
 ## How to start a new Claude chat with full context
-"Read my current project state from GitHub before we start:
-https://raw.githubusercontent.com/stevenpicton1979/portfoliostate/main/STATE.md
-— I'm Steve, building a PropTech portfolio with Claude Code. Once you've read it confirm you're up to speed."
+Open new chat at claude.ai and paste:
+"Read my current project state from GitHub before we start: https://raw.githubusercontent.com/stevenpicton1979/portfoliostate/main/STATE.md — I'm Steve, building a PropTech portfolio with Claude Code. Once you've read it confirm you're up to speed."

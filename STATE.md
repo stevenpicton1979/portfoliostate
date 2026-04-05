@@ -50,12 +50,10 @@ Last updated: 6 April 2026
 - Sprint 4 remaining: S4-4 Stripe live mode (MANUAL — needs real card test), S4-6 full staging test (MANUAL), S4-7 final sync
 - Data: 16,115 parcels + 12,037 pipes loaded; suburb-by-suburb loader written for full 773k (run manually ~60 min)
 - BCC API limitation: 10k record cap per query — load-all-suburbs.js iterates 195 suburbs
-- Status: LAUNCH READY — pending Stripe live mode confirmation + full data load
-- Production fix (2026-04-05): ALLOWED_ORIGIN Vercel env var had trailing newline → ERR_INVALID_CHAR on all endpoints. Fixed with .trim() in all 7 API files. Deployed commit 8d002b1.
-- Geocode + map fixes (2026-04-05): Mapbox token now fetched from /api/config (was hardcoded placeholder). bbox negative lat fix for Brisbane. mapboxgl.Map missing `new` keyword fixed. Geocode working, map rendering fixed.
-- Status: webhook timeout fixed, full pipeline test in progress. BASE_URL fallback set to subdivideiq.vercel.app (domain not yet purchased).
-- PDF: pdfkit (pure Node.js, no puppeteer — no change needed).
-- Webhook: processReport now awaited before res.json(), races 25s timeout so Stripe always gets a response.
+- Status: PIPELINE WORKING — end-to-end confirmed: autocomplete → lot boundary → Stripe → webhook → feasibility → email+PDF. Outstanding: S4-3 staging test with real address, S4-4 live mode test, PL-1 traffic light calibration, domain purchase.
+- Production fixes applied (2026-04-05): ALLOWED_ORIGIN trailing newline (ERR_INVALID_CHAR), Mapbox token placeholder, bbox negative lat, mapboxgl.Map missing `new`, webhook async→sync (25s race), BASE_URL fallback to subdivideiq.vercel.app.
+- PDF: pdfkit (pure Node.js, no puppeteer).
+- Webhook: processReport awaited before res.json(), races 25s timeout.
 - BACKLOG.md lives in subdivideiq repo (copy in portfoliostate as SUBDIVIDEIQ_BACKLOG.md)
 
 ## Infrastructure

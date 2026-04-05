@@ -45,6 +45,11 @@ This file is the portfolio overview only — one section per product.
 - Stripe: TEST mode — sandbox confirmed working end-to-end, live keys not yet configured
 - Resend: hello@clearoffer.com.au
 - Feasibility checks: zone, flood, elevation, stormwater, character, lotsize, contaminated, infrastructure, easements, acid sulfate (10 checks, all working)
+- Data architecture (Option C — decided April 2026): live API queries at runtime, not bulk Supabase storage
+  - Lot boundaries: BCC Open Data API (live query)
+  - Elevation/slope: QLD ArcGIS ImageServer REST (live query)
+  - Stormwater: BCC Open Data API (live query)
+  - Flood/zone overlays: ZoneIQ/Supabase (already stored — exception, reuse existing data)
 - Status: PIPELINE CONFIRMED WORKING (6 April 2026) — pre-launch
 - Pending: ARCH-1 cadastral API decision, domain purchase, live Stripe, launch
 - Backlog: stevenpicton1979/subdivideiq — BACKLOG.md

@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 6 April 2026 (evening session)
+Last updated: 6 April 2026
 
 ## IMPORTANT — FOR ALL CLAUDE SESSIONS
 This file is the single source of truth. Rules:
@@ -33,7 +33,7 @@ This file is the single source of truth. Rules:
 - Live: zoneiq.com.au + zoneiq-sigma.vercel.app
 - Stack: Next.js 14 + Vercel + Supabase PostGIS
 - Coverage: Brisbane, Gold Coast, Moreton Bay, Sunshine Coast, Ipswich, Logan, Redland = 189,751 polygons
-- Overlays: flood, character, schools, bushfire (Sprint 8), heritage (Sprint 9), aircraft noise (Sprint 10), acid sulfate soils (Sprint 15)
+- Overlays: flood, character, schools, bushfire, heritage, aircraft noise (ANEF), acid sulfate soils, contaminated land link-out
 - RapidAPI: listed and public, proxy auth working, RAPIDAPI_PROXY_SECRET in Vercel env
 - API keys: working, stored in api_keys table
 - Nearest polygon fallback: plpgsql function confirmed in Supabase
@@ -91,10 +91,10 @@ This file is the single source of truth. Rules:
 
 ### SubdivideIQ — subdivide.whatcanibuild.com.au
 - Repo: stevenpicton1979/subdivideiq (main branch)
-- URL: subdivide.whatcanibuild.com.au (subdomain of WhatCanIBuild — no separate domain purchased)
+- Domain: subdivide.whatcanibuild.com.au (subdomain of whatcanibuild.com.au)
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Status: LAUNCHED — live test payment confirmed 6 April 2026
-- Stripe: LIVE mode, $79 AUD + GST (tax collected by Stripe), checkout.session.completed webhook
+- Status: LAUNCHED — live at subdivide.whatcanibuild.com.au
+- Stripe: LIVE mode, $79 AUD, webhook scoped to product: subdivideiq
 
 - Sprint history:
   - Sprint 1 [x] COMPLETE: Repo scaffold, Supabase tables, BCC parcel + stormwater data loaded

@@ -214,6 +214,12 @@ This file is the single source of truth. Rules:
 
 ---
 
+## Claude Code session defaults
+- When a task is operational (deploy, fix, configure, update env vars, run tests, manage files), write a Claude Code prompt for it and execute via Claude Code rather than giving step-by-step instructions
+- Use MCP servers (Vercel, Supabase, GitHub) directly rather than CLI copy-paste where possible  
+- Default to autonomous execution — only surface decisions that require Steve's executive judgement
+- Secrets should always be managed via Doppler, never hardcoded or set manually via CLI
+
 ## How to start a new Claude chat with full context
 Paste this into claude.ai:
 "Read my current project state from GitHub before we start:

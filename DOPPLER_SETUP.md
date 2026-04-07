@@ -1,48 +1,29 @@
-# Doppler Setup — One-time manual steps
+# Secret Management — Decision Record
 
-## Step 1: Create Doppler account
-Go to https://doppler.com and sign up with your Google account.
+## Decision: Vercel MCP + Claude Code (not Doppler)
 
-## Step 2: Install Doppler CLI
-Run in terminal: (winget install Doppler.doppler) or download from https://docs.doppler.com/docs/install-cli
+Date: 7 April 2026
 
-## Step 3: Create Doppler projects
-In the Doppler dashboard, create one project for each product:
-- subdivideiq
-- whatcanibuild  
-- zoneiq
-- clearoffer (for future use)
+Doppler was evaluated but rejected in favour of using the Vercel MCP directly via Claude Code.
 
-For each project, Doppler creates dev/staging/production configs automatically.
+## Why
 
-## Step 4: Add secrets to each Doppler project
-In the Doppler dashboard for each project, add the secrets currently in Vercel env vars.
-Use these as the source of truth going forward — never set secrets in Vercel directly again.
+- Vercel MCP can read and write env vars across all projects autonomously
+- Claude Code handles secret rotation, gap-filling, and auditing without manual CLI steps
+- Free at any scale — no per-project limits
+- Already set up and tested
 
-Current secrets per project (populate from Vercel dashboard or .env.local files):
-- SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL
-- SUPABASE_SERVICE_KEY / SUPABASE_SERVICE_ROLE_KEY  
-- SUPABASE_ANON_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY
-- STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
-- RESEND_API_KEY
-- MAPBOX_TOKEN (subdivideiq, whatcanibuild)
-- RAPIDAPI_PROXY_SECRET (zoneiq)
-- DATABASE_URL
-- BASE_URL / ALLOWED_ORIGIN
+## How to manage secrets going forward
 
-## Step 5: Connect Doppler to Vercel
-In each Doppler project: Integrations → Vercel → Authorize → select matching Vercel project → Setup Integration
-Do this for Production, Preview, and Development environments separately.
+Tell Claude Code what you need in plain English:
+- "Add X to the Preview environment for subdivideiq"
+- "Rotate the Supabase service key across all three projects"
+- "List all env vars missing from Preview in whatcanibuild"
 
-## Step 6: Verify sync
-After connecting, Doppler secrets should appear in Vercel env vars automatically.
-Test by triggering a redeploy and confirming the app works.
+Claude Code handles it via Vercel MCP. You never touch vercel env add again.
 
-## Step 7: Install Doppler CLI and authenticate
-doppler login
-doppler setup (run in each repo directory, select matching project)
+## What Doppler would have added (not needed)
 
-## Going forward
-- To add/change a secret: update in Doppler dashboard → auto-syncs to Vercel
-- To run locally with secrets: doppler run -- npm run dev
-- Claude Code can manage Doppler secrets once CLI is authenticated
+- Audit trail (Vercel provides this in dashboard)
+- Auto-redeploy on secret change (can be done via Vercel deploy hooks)
+- Cross-project secret referencing (not needed — projects are independent)

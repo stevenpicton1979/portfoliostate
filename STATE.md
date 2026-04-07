@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 6 April 2026
+Last updated: 8 April 2026
 
 ## IMPORTANT — FOR ALL CLAUDE SESSIONS
 This file is the single source of truth. Rules:
@@ -145,6 +145,9 @@ This file is the single source of truth. Rules:
 
 ## Infrastructure
 - Supabase project: fzykfxesznyiigoyeyed
+- Supabase RLS: ENABLED on all tables (8 April 2026)
+  - ZoneIQ (fzykfxesznyiigoyeyed): 16 tables locked, public SELECT on 6 map/overlay tables, service role only on wcib_reports/api_keys/api_usage
+  - ClearOffer (dqzqqfcepsqhaxovneen): 6 tables locked, service role only, no anon access
 - Tables: zone_geometries, zone_rules, flood_overlays, character_overlays,
   school_catchments, bushfire_overlays, wcib_reports, api_keys, api_usage,
   subdivide_parcels, subdivide_sw_pipes, subdivide_sw_drains, subdivide_reports,
@@ -166,6 +169,39 @@ This file is the single source of truth. Rules:
   - WhatCanIBuild and SubdivideIQ send from hello@clearoffer.com.au
 - RapidAPI: ZoneIQ listed, public, Basic/Pro/Ultra tiers
 - Nominatim: address autocomplete in ClearOffer (not Mapbox)
+
+---
+
+## Claude Listener (INFRA-1)
+- Repo: stevenpicton1979/claude-listener (private, main branch)
+- Location: C:/dev/claude-listener
+- Stack: Node.js, @slack/socket-mode, @slack/web-api
+- Status: BUILT — end-to-end test from phone pending
+
+- What works:
+  - Socket Mode connected via xapp- token
+  - Listens on #claude-tasks channel and DMs
+  - Routes messages to correct repo by keyword (zoneiq, subdivideiq, clearoffer, whatcanibuild)
+  - Posts 👀 On it... reply, runs Claude Code, posts result back to thread
+  - Interrupt auto-responder: real-time stdout scanning, auto-sends y/1/enter on known prompts (7/7 tests passed)
+  - Auto-session logging to OVERNIGHT_LOG.md on startup/shutdown
+
+- What's pending:
+  - [ ] Task Scheduler install (task-scheduler.xml exists, not yet installed)
+  - [ ] End-to-end test from phone
+  - [ ] Laptop sleep prevention (AC power setting)
+
+- Secrets:
+  - SLACK_BOT_TOKEN: in .claude.json Slack MCP env block
+  - SLACK_APP_TOKEN (xapp-): in .claude.json Slack MCP env block + .env
+  - SLACK_TASKS_CHANNEL: claude-tasks
+
+- Repo keyword routing:
+  - zoneiq → C:/dev/zoneiq
+  - subdivideiq / subdivide → C:/dev/subdivideiq
+  - clearoffer / buyerside → C:/dev/buyerside
+  - whatcanibuild → C:/dev/whatcanibuild
+  - default → C:/dev/portfoliostate
 
 ---
 

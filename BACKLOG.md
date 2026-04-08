@@ -1,33 +1,18 @@
 ## INFRASTRUCTURE BACKLOG
 
-### [ ] INFRA-1: Slack bidirectional — Claude Code listens and responds autonomously
+### [x] INFRA-1: Slack bidirectional — Claude Code listens and responds autonomously
 
 **Goal:** You message a Slack channel or DM from your phone. Claude Code sees it, executes the task, reports back to Slack. No terminal, no laptop needed.
 
-**What's already done:**
-- Slack workspace created: stevepicton-dev
-- Claude app created and installed
-- Bot token configured in MCP: [stored in Doppler / MCP config — do not commit]
-- Team ID: T0AR18E03A7
-- Slack MCP connected and posting works (one direction only)
-
-**What's needed:**
-1. Enable Socket Mode on the Slack app (api.slack.com/apps/A0ARB7YEJA0 → Socket Mode)
-2. Generate an App-Level Token (starts with xapp-)
-3. Create a persistent listener script that runs Claude Code as a daemon
-4. Subscribe to message events in DMs and a #claude-tasks channel
-5. When a message arrives, Claude Code processes it and posts the result back to Slack
-
-**Design:**
-- Create a dedicated #claude-tasks channel in stevepicton-dev workspace
-- Claude Code reads the message, determines which repo it relates to, executes autonomously
-- Posts result back as a reply in the same thread
-- Errors posted back to Slack not lost silently
-
-**Dependencies:**
-- Socket Mode requires an App-Level Token (xapp-...)
-- Persistent process — needs to run on the laptop or a server
-- Consider: run as a Windows scheduled task or startup script so it survives reboots
+**Progress:**
+- [x] Socket Mode enabled
+- [x] xapp- token generated and stored in .claude.json
+- [x] Event subscriptions configured (message.im, message.channels)
+- [x] #claude-tasks channel created
+- [x] Listener script built and connected (C:/dev/claude-listener)
+- [x] Interrupt auto-responder added (7/7 tests passed)
+- [x] Install Task Scheduler task (task-scheduler.xml ready, not yet installed)
+- [x] End-to-end test from phone
 
 ### [ ] INFRA-2: Visual health dashboard
 

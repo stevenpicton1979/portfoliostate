@@ -203,6 +203,13 @@ This file is the single source of truth. Rules:
   - whatcanibuild → C:/dev/whatcanibuild
   - default → C:/dev/portfoliostate
 
+### Slack message conventions
+- Single task: `<keyword> — <instruction>` e.g. `zoneiq — list files`
+- Overnight: `overnight: <keyword> — work through BACKLOG.md` or just `overnight: <keyword>` if /start is configured
+- Keywords: zoneiq, subdivideiq, clearoffer, whatcanibuild, portfolio (default)
+- Alerts channel: #claude-alerts (errors, downtime)
+- Tasks channel: #claude-tasks (all instructions)
+
 ---
 
 ## Overnight build system

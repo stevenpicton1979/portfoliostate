@@ -15,19 +15,16 @@
 - [x] End-to-end test from phone
 
 ### [ ] INFRA-2: Visual health dashboard
-
-**Goal:** A single page showing live status of all three products — last deployment, smoke test result, any errors in the last 24h.
-
-**Products to monitor:**
-- SubdivideIQ (subdivide.whatcanibuild.com.au)
-- WhatCanIBuild (whatcanibuild.com.au)
-- ZoneIQ (zoneiq.com.au)
-
-**Data sources:**
-- Vercel MCP: last deployment status, build logs
-- Supabase MCP: table row counts (subdivide_reports, wcib_reports)
-- Simple HTTP check: ping each domain and check 200 response
-
-**Output:** Static HTML page or React artifact — green/amber/red per product, auto-refreshes every 60 seconds.
-
-**Note:** Can be built as a Claude Code artifact or a standalone Vercel deployment.
+- Deploy a status page to Vercel from the portfoliostate repo
+- Stack: single HTML file with vanilla JS, auto-refreshes every 60s
+- Checks every 30 minutes via Vercel cron job (api/health-check.js)
+- Products to monitor:
+  - WhatCanIBuild: https://whatcanibuild.com.au
+  - ZoneIQ: https://zoneiq.com.au
+  - ClearOffer: https://clearoffer.com.au
+  - SubdivideIQ: https://subdivide.whatcanibuild.com.au
+- Each product shows: green (200 response), amber (slow >3s), red (error/timeout)
+- When any product goes red: post alert to #claude-alerts Slack channel via SLACK_BOT_TOKEN
+- Alert format: "🚨 [product] is down — [timestamp]"
+- Recovery alert when it comes back up: "✅ [product] is back up — [timestamp]"
+- Dashboard URL: status.whatcanibuild.com.au (subdomain of whatcanibuild.com.au)

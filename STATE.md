@@ -292,9 +292,79 @@ Claude will write one prompt covering all 5 steps above. You run it. Done.
 - Secrets should always be managed via Doppler, never hardcoded or set manually via CLI
 
 ## How to start a new Claude chat with full context
-Paste this into claude.ai:
-"Read my current project state from GitHub before we start:
-https://raw.githubusercontent.com/stevenpicton1979/portfoliostate/main/STATE.md
-I'm Steve, building a PropTech portfolio with Claude Code.
-Once you've read it confirm you're up to speed.
-IMPORTANT: Do not modify STATE.md without my explicit instruction to do so."
+Paste this into claude.ai or Claude Code:
+
+---
+Read my current project state before we start: https://raw.githubusercontent.com/stevenpicton1979/portfoliostate/main/STATE.md
+I'm Steve, building a PropTech portfolio with Claude Code. Once you've read it confirm you're up to speed.
+
+IMPORTANT RULES:
+- Do not modify STATE.md without my explicit instruction
+- Do not assume any product is more complete than described
+- If anything is unclear, ask me — do not infer from code
+
+HOW I WANT TO WORK:
+- Write Claude Code prompts for all operational tasks — do not give me step-by-step CLI instructions
+- Use MCP servers (Vercel, Supabase, GitHub, Slack) via Claude Code rather than manual CLI
+- Default to autonomous execution — only surface decisions that require my executive judgement
+- Outsource as much as possible to Claude Code — minimise my manual steps and copy-paste
+- For manual browser steps (e.g. Slack, Vercel dashboard) — walk me through one step at a time, I'll confirm each before you continue
+- Never hardcode secrets or use vercel env add manually — use Vercel MCP
+
+MY SETUP:
+- Claude Code runs with --dangerously-skip-permissions via alias in Git Bash
+- All MCP tools pre-approved (Vercel, Supabase, GitHub, Slack, Memory)
+- /start command in each repo — auto-executes backlog on overnight:/build it/execute/work through keywords
+- Memory MCP stores facts across sessions
+- Listener auto-starts on reboot via Windows Task Scheduler
+
+SLACK CONTROL (primary way to run builds):
+- Workspace: stevepicton-dev, Team ID: T0AR18E03A7
+- #claude-tasks: send tasks and overnight builds
+- #claude-alerts: automated error/downtime alerts only
+- Single task: "zoneiq — list files"
+- Overnight build: "overnight: zoneiq" (auto-executes full backlog, no second message needed)
+- Keywords: zoneiq, subdivideiq, clearoffer, whatcanibuild, portfolio
+- Listener lives at C:/dev/claude-listener, runs 24/7 via Task Scheduler
+
+SECRETS:
+- Vercel env vars managed via Vercel MCP
+- Slack tokens in C:\Users\steve\.claude.json (bot token + xapp- token)
+- No Doppler
+
+INFRASTRUCTURE STATUS:
+- Supabase RLS: enabled on all tables (April 2026)
+- INFRA-1 (Slack listener): COMPLETE
+- INFRA-2 (health dashboard): IN PROGRESS
+
+PRODUCTS & STATUS:
+- WhatCanIBuild (whatcanibuild.com.au) — LAUNCHED, live Stripe
+- ZoneIQ (zoneiq.com.au) — LAUNCHED, RapidAPI live
+- SubdivideIQ (subdivide.whatcanibuild.com.au) — LAUNCHED, live Stripe
+- ClearOffer (clearoffer.com.au) — ON HOLD, awaiting data partner
+- whatcanibuild repo is on master branch (all others on main)
+
+CURRENT PRIORITIES:
+1. INFRA-2: Health dashboard (building now)
+2. ZoneIQ Sprint 16: QFAO flood fallback
+3. SubdivideIQ: Reddit post (r/Brisbane + r/AusPropertyChat) — not done
+4. ClearOffer: on hold until data partner confirmed
+
+NEW PROJECT SETUP:
+Say "Create a new project called <name>. Repo: stevenpicton1979/<reponame>. Keyword: <keyword>. Description: <one line>."
+Claude writes one prompt — scaffolds repo, adds to Slack listener, tests routing. You run it once.
+
+KEY GOTCHAS (read before touching any repo):
+- Always use $func$ not $$ for Supabase SQL
+- Never combine cd and git in same command
+- WhatCanIBuild calls zoneiq-sigma.vercel.app NOT zoneiq.com.au
+- Gold Coast zone codes are full words not abbreviations
+- Supabase v2: use try/catch not .catch() chaining
+- buyerside repo uses main branch (not master)
+- whatcanibuild repo uses master branch (not main)
+- NEVER use echo "value" | vercel env add on Windows Git Bash — appends \n
+- DCDB API has CORS restrictions — always call server-side
+- Claude Code bash: use $(cat file) not $(<file)
+- SubdivideIQ uses live API queries not local data (Option C)
+- Vercel outbound IP for allowlisting: 216.150.1.1
+---

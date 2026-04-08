@@ -79,10 +79,10 @@ This file is the single source of truth. Rules:
   - NOT ready for real users — significant mock data throughout
 
 - Data partner status:
-  - Domain.com.au: Listings Management Sandbox active, Agents & Listings + Price Estimation + Properties & Locations PENDING approval
-  - PropTechData: emailed hello@proptechdata.com.au — no response yet
-  - PriceFinder: not yet contacted
-  - Outreach emails drafted 6 April — sending tomorrow
+  - Domain.com.au: Listings Management Sandbox active. Agents & Listings, Price Estimation, Properties & Locations PENDING approval via developer portal. First contact email sent 8 April 2026 to support@domain.com.au — awaiting response.
+  - PropTechData: First contact email sent 8 April 2026 to hello@proptechdata.com.au — awaiting response.
+  - PriceFinder: First contact email sent 8 April 2026 to info@pricefinder.com.au — awaiting response. Note: PriceFinder is owned by Domain Group.
+  - Outreach emails sent 8 April 2026 — follow up if no response by 15 April 2026.
 
 - Blockers (unresolved):
   - Comparable sales: no data partner confirmed

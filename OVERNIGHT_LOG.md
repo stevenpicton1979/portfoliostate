@@ -72,3 +72,8 @@ Session: 2026-04-06
 - DNS: Add A record at nameserver.net.au → `status` → `76.76.21.21` (or CNAME status → cname.vercel-dns.com)
 - @vercel/kv deprecated — connect Upstash Redis via Vercel integrations for recovery alert state tracking
 - Set up Doppler for portfoliostate project (currently not authenticated)
+
+### 2026-04-08 — Session verification
+- Confirmed all 4 products returning 200 green via /api/status (WhatCanIBuild 47ms, ZoneIQ 43ms, ClearOffer 53ms, SubdivideIQ 29ms)
+- All BACKLOG.md tasks now [x] — only open item is manual DNS record
+- BACKLOG.md has zero remaining [ ] tasks

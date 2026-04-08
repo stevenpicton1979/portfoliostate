@@ -77,3 +77,9 @@ Session: 2026-04-06
 - Confirmed all 4 products returning 200 green via /api/status (WhatCanIBuild 47ms, ZoneIQ 43ms, ClearOffer 53ms, SubdivideIQ 29ms)
 - All BACKLOG.md tasks now [x] — only open item is manual DNS record
 - BACKLOG.md has zero remaining [ ] tasks
+
+### 2026-04-08 — BACKLOG sweep (this session)
+- BACKLOG had 0 new [ ] tasks — INFRA-2 was already complete from prior session
+- Re-verified live deployment: all 4 products green (WhatCanIBuild 53ms, ZoneIQ 58ms, ClearOffer 68ms, SubdivideIQ 27ms)
+- Deployment protection disabled on portfoliostate-status Vercel project (was blocking public access to preview URLs)
+- status.whatcanibuild.com.au still pending DNS — requires manual A/CNAME record at nameserver.net.au

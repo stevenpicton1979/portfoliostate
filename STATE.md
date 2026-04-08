@@ -212,6 +212,34 @@ This file is the single source of truth. Rules:
 
 ---
 
+## New project setup
+When creating a new product repo, run a Claude Code prompt that does ALL of the following:
+
+Step 1 — Create GitHub repo via GitHub MCP (private by default)
+Step 2 — Scaffold these files:
+  - CLAUDE.md (copy /start command format from portfoliostate/CLAUDE.md)
+  - BACKLOG.md (empty with # Backlog header)
+  - OVERNIGHT_LOG.md (empty with # Overnight Log header)
+  - README.md (one line: project name and description)
+Step 3 — Add keyword routing to claude-listener:
+  - Read C:/dev/claude-listener/listener.js
+  - Find the REPO_MAP or keyword routing section
+  - Add new entry: 'keyword' → 'C:/dev/reponame'
+  - Commit and push claude-listener
+Step 4 — Commit and push new repo to GitHub
+Step 5 — Test via Slack MCP: post "list files in <keyword>" to #claude-tasks and confirm routing works
+
+Standard keywords: use the product name in lowercase, no spaces (e.g. "subdivideiq", "clearoffer")
+Standard repo location: C:/dev/<reponame>
+Standard branch: main
+
+To create a new project, tell Claude in a new chat:
+"Create a new project called <name>. Repo: stevenpicton1979/<reponame>. Keyword: <keyword>. Description: <one line>. Read STATE.md first."
+
+Claude will write one prompt covering all 5 steps above. You run it. Done.
+
+---
+
 ## Overnight build system
 - Each product repo has BACKLOG.md — Claude Code reads and executes autonomously
 - Start: claude --dangerously-skip-permissions in repo terminal

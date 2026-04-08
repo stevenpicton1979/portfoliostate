@@ -128,6 +128,7 @@ This file is the single source of truth. Rules:
   - [ ] what_to_do_next step 4 hardcoded as "Infrastructure charges (BCC)" regardless of council
   - [ ] WhatCanIBuild webhook fires for SubdivideIQ payments (both listen to same Stripe account) — currently 0% error rate on WhatCanIBuild webhook but wrong product email sent first
   - [ ] STRIPE_PRICE_ID not used — checkout.js uses price_data inline. Either remove env var or refactor to use it.
+  - [ ] Rocklea flood gap: Point A (-27.531, 153.018) returns GREEN despite being 75m from FHA_R5 boundary. Diagnosed 8 April 2026 — NOT a data loading bug. BCC source data itself has no polygon here. Acceptable known limitation of upstream BCC flood overlay data. Document in product disclaimers.
 
 - Stripe webhooks (both active on same account):
   - subdivide-live-webhook: https://subdivide.whatcanibuild.com.au/api/webhook — 100% success after whsec fix

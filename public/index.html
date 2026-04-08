@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Status — Portfolio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.4rem;
+    }
+    #refresh-bar {
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 0.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1e2433;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.2s;
+    }
+    .card.green  { border-left: 4px solid #22c55e; }
+    .card.amber  { border-left: 4px solid #f59e0b; }
+    .card.red    { border-left: 4px solid #ef4444; }
+    .card.loading { border-left: 4px solid #475569; }
+    .dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .green  .dot { background: #22c55e; box-shadow: 0 0 8px #22c55e88; }
+    .amber  .dot { background: #f59e0b; box-shadow: 0 0 8px #f59e0b88; }
+    .red    .dot { background: #ef4444; box-shadow: 0 0 8px #ef444488; animation: pulse 1.2s infinite; }
+    .loading .dot { background: #475569; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .info { flex: 1; }
+    .info .name { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
+    .info .url  { font-size: 0.75rem; color: #64748b; margin-top: 0.15rem; }
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .green  .badge { background: #14532d; color: #4ade80; }
+    .amber  .badge { background: #451a03; color: #fbbf24; }
+    .red    .badge { background: #450a0a; color: #f87171; }
+    .loading .badge { background: #1e293b; color: #64748b; }
+    .ms {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      margin-top: 0.2rem;
+      text-align: right;
+    }
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: #334155;
+    }
+    #overall {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    #overall span {
+      display: inline-block;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .all-good { background: #14532d; color: #4ade80; }
+    .has-issue { background: #450a0a; color: #f87171; }
+    .checking  { background: #1e293b; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>System Status</h1>
+    <p>Monitoring 4 products</p>
+    <div id="refresh-bar">Checking…</div>
+  </header>
+
+  <div id="overall"><span class="checking">Checking…</span></div>
+
+  <div class="grid" id="grid">
+    <div class="card loading"><div class="dot"></div><div class="info"><div class="name">WhatCanIBuild</div><div class="url">whatcanibuild.com.au</div></div><div><div class="badge">—</div></div></div>
+    <div class="card loading"><div class="dot"></div><div class="info"><div class="name">ZoneIQ</div><div class="url">zoneiq.com.au</div></div><div><div class="badge">—</div></div></div>
+    <div class="card loading"><div class="dot"></div><div class="info"><div class="name">ClearOffer</div><div class="url">clearoffer.com.au</div></div><div><div class="badge">—</div></div></div>
+    <div class="card loading"><div class="dot"></div><div class="info"><div class="name">SubdivideIQ</div><div class="url">subdivide.whatcanibuild.com.au</div></div><div><div class="badge">—</div></div></div>
+  </div>
+
+  <footer>
+    Auto-refreshes every 60 seconds · Checks run every 30 minutes server-side
+  </footer>
+
+  <script>
+    const REFRESH_MS = 60000;
+    let countdown = REFRESH_MS / 1000;
+    let timer;
+
+    function statusLabel(s) {
+      if (s === 'green') return 'Online';
+      if (s === 'amber') return 'Slow';
+      if (s === 'red')   return 'Down';
+      return '—';
+    }
+
+    function renderCard(r) {
+      return `
+        <div class="card ${r.status}">
+          <div class="dot"></div>
+          <div class="info">
+            <div class="name">${r.name}</div>
+            <div class="url">${new URL(r.url).hostname}</div>
+          </div>
+          <div>
+            <div class="badge">${statusLabel(r.status)}</div>
+            <div class="ms">${r.ms != null ? r.ms + ' ms' : ''}</div>
+          </div>
+        </div>`;
+    }
+
+    function updateCountdown() {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(timer);
+        document.getElementById('refresh-bar').textContent = 'Refreshing…';
+        load();
+      } else {
+        document.getElementById('refresh-bar').textContent = `Next check in ${countdown}s`;
+      }
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const grid = document.getElementById('grid');
+        grid.innerHTML = data.results.map(renderCard).join('');
+
+        const anyRed   = data.results.some(r => r.status === 'red');
+        const anyAmber = data.results.some(r => r.status === 'amber');
+        const overall  = document.getElementById('overall');
+        if (anyRed) {
+          overall.innerHTML = '<span class="has-issue">⚠ Outage detected</span>';
+        } else if (anyAmber) {
+          overall.innerHTML = '<span class="has-issue">⚠ Degraded performance</span>';
+        } else {
+          overall.innerHTML = '<span class="all-good">✓ All systems operational</span>';
+        }
+
+        const checked = new Date(data.checked).toLocaleTimeString('en-AU', { timeZone: 'Australia/Brisbane' });
+        countdown = REFRESH_MS / 1000;
+        clearInterval(timer);
+        timer = setInterval(updateCountdown, 1000);
+        document.getElementById('refresh-bar').textContent = `Last checked at ${checked} AEST · Next in ${countdown}s`;
+      } catch (e) {
+        document.getElementById('refresh-bar').textContent = 'Check failed — retrying soon';
+        setTimeout(load, 15000);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

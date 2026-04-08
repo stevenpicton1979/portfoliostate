@@ -52,3 +52,23 @@ Session: 2026-04-06
 - S4-5: Jest installed, smoke.test.js written — 6/6 passing
 - Deployed to https://subdivideiq.vercel.app (Production)
 - Sprint 4 blockers: S4-4 (Stripe live mode manual), S4-6 (browser staging test manual), full suburb data load manual
+
+---
+
+## INFRA-2: Visual health dashboard — 2026-04-08
+
+**Task:** Build and deploy status.whatcanibuild.com.au health dashboard.
+
+**Completed:**
+- public/index.html — dark-theme dashboard, 4 product cards, auto-refreshes every 60s, calls /api/status
+- api/status.js — server-side fetch of all 4 products (WhatCanIBuild, ZoneIQ, ClearOffer, SubdivideIQ), returns status + response time
+- api/health-check.js — Vercel cron */30 * * * *, state tracking via @vercel/kv (graceful degradation), Slack alerts to #claude-alerts on down/recovery
+- vercel.json — cron config, output dir public
+- Deployed to https://portfoliostate-status.vercel.app (Production alias: portfoliostate-status.vercel.app)
+- Custom domain status.whatcanibuild.com.au added to Vercel project
+- SLACK_BOT_TOKEN added to Vercel env (copied from claude-listener/.env.local — NOTE: Doppler not configured for portfoliostate, set up needed)
+
+**Blockers / manual steps:**
+- DNS: Add A record at nameserver.net.au → `status` → `76.76.21.21` (or CNAME status → cname.vercel-dns.com)
+- @vercel/kv deprecated — connect Upstash Redis via Vercel integrations for recovery alert state tracking
+- Set up Doppler for portfoliostate project (currently not authenticated)

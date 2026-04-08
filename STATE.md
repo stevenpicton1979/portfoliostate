@@ -93,7 +93,7 @@ This file is the single source of truth. Rules:
 - Repo: stevenpicton1979/subdivideiq (main branch)
 - Domain: subdivide.whatcanibuild.com.au (subdomain of whatcanibuild.com.au)
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Status: LAUNCHED — live at subdivide.whatcanibuild.com.au
+- Status: LAUNCHED — live Stripe, Reddit posted 8 April 2026 (r/Brisbane + r/AusPropertyChat)
 - Stripe: LIVE mode, $79 AUD, webhook scoped to product: subdivideiq
 
 - Sprint history:
@@ -140,7 +140,7 @@ This file is the single source of truth. Rules:
   - [ ] Fix infrastructure charge defaulting to BCC when council is null
   - [ ] Fix what_to_do_next BCC hardcoding
   - [ ] Scope Stripe webhooks by product (use metadata or separate Stripe accounts)
-  - [ ] Reddit post: r/Brisbane + r/AusPropertyChat (NOT YET POSTED)
+  - [x] Reddit post: r/Brisbane + r/AusPropertyChat — POSTED 8 April 2026
 
 ---
 
@@ -279,7 +279,7 @@ Claude will write one prompt covering all 5 steps above. You run it. Done.
 ---
 
 ## Product priority order (current — 6 April 2026)
-1. SubdivideIQ — LAUNCHED today. Post Reddit (r/Brisbane + r/AusPropertyChat) — NOT YET DONE
+1. SubdivideIQ — LAUNCHED, Reddit posted 8 April 2026. Monitor for responses.
 2. ZoneIQ — verify overnight session complete, then Sprint 16 (QFAO flood fallback)
 3. ClearOffer — ON HOLD until data partner confirmed
 4. WhatCanIBuild — live, minor bugs in backlog, no active work needed

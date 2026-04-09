@@ -21,8 +21,10 @@ Last updated: 9 April 2026
 - RapidAPI: listed and public, proxy auth working, RAPIDAPI_PROXY_SECRET in Vercel env
 - Status: LAUNCHED on RapidAPI. National coverage live (QLD SEQ + NSW Sydney + VIC Melbourne).
 - API version: 2.0.0 (header: X-ZoneIQ-Version, meta.version in response body)
+- OpenAPI spec: live at zoneiq-sigma.vercel.app/api/openapi (updated Sprint 26, v2.0.0 — full response shape, all overlays, national coverage)
+- Marketing page: updated Sprint 27 — "Australia's planning zone API", 84 councils, all 6 overlay types, national demo addresses
 - DECISIONS.md: exists in repo — read before making architectural changes
-- Active backlog: BACKLOG.md in zoneiq repo
+- Active backlog: BACKLOG.md in zoneiq repo — no [ ] sprints remaining as of 9 April 2026
 
 #### ZoneIQ Dataset State (DB audit 9 April 2026)
 
@@ -53,9 +55,11 @@ Last updated: 9 April 2026
 - BRISBANE: ANEF 20, 25, 30, 35 (3 polygons at 35)
 - ARCHERFIELD: ANEF 20, 25, 30
 - GOLD_COAST: ANEF 20, 25, 30, 35, 40
-- MELBOURNE: ANEF 20, 25 (Tullamarine only — Essendon absent)
+- MELBOURNE: ANEF 20, 25 (Tullamarine only — Essendon confirmed absent from VIC Airport Environs MapServer)
 - Western Sydney Airport: ANEF 20-25, 25-30, 30-35, 35-40
-- ABSENT: Sydney Kingsford Smith — manual acquisition required
+- ABSENT: Sydney Kingsford Smith — confirmed not in any NSW public ArcGIS service. Manual acquisition required.
+- ABSENT: Essendon — confirmed not in VIC Airport Environs MapServer
+- NOTE: Avalon Airport has queryable ANEF layers — added to ideas to spec
 
 **heritage_overlays: 3,657** — State QLD-wide (1,800) + local Brisbane (1,857)
 **bushfire_overlays: 132,000** — 13 SEQ LGAs
@@ -75,16 +79,18 @@ Last updated: 9 April 2026
 - Sprint 23: COMPLETE — 888 VIC school zones, Melbourne ANEF20 + ANEF25 (Tullamarine). Essendon absent.
 - Sprint 24: COMPLETE — SEQ flood gap fill: GC 159,950 · Redland 23,700 · SC 1,561 · MBRC 1,000 · Logan 520 · Ipswich 288
 - Sprint 25: COMPLETE — National geocoder (lat -44 to -10, lng 112 to 154), state-aware suffix, API v2.0.0, 10-address national smoke test passed
+- Sprint 26: COMPLETE — OpenAPI spec rewritten to v2.0.0. All 6 overlays documented, partial response shape, error codes, live examples. Served at /api/openapi.
+- Sprint 27: COMPLETE — Marketing page updated. H1 "Australia's planning zone API", 84 councils, all 6 overlay types listed, national demo addresses, meta tags updated.
+- Sprint 28: COMPLETE — KSF ANEF: confirmed not in any NSW public ArcGIS service (NSW ePlanning SEPP Layer 280 is Western Sydney only). Essendon: confirmed not in VIC Airport Environs MapServer. Avalon Airport ANEF layers found — added to ideas to spec.
 
-#### ZoneIQ Known Gaps (manual action required)
-- Sydney Kingsford Smith ANEF: not publicly available as open data — manual acquisition required
-- Essendon Airport ANEF: not ingested — check VIC planning portal again
+#### ZoneIQ Known Gaps
+- Sydney Kingsford Smith ANEF: confirmed not available as open data — manual contact required (planning@sydneyairport.com.au or NSW Planning spatial team)
+- Essendon Airport ANEF: confirmed not in VIC Airport Environs MapServer — manual acquisition required
 - QFAO endpoint: awaiting QRA publication — update QFAO_URL in lib/zone-lookup.ts when live
-- RapidAPI listing: needs updating to reflect NSW + VIC national coverage
-- zoneiq.com.au marketing page: needs updating to reflect national coverage
-- school_catchments: no council column — cannot filter by LGA
-- noise_overlays has no source column — airport name is the identifier
-- Fringe VIC/NSW councils in zone_geometries have no zone_rules — partial responses expected
+- RapidAPI listing: low priority — not actively promoted, no external users yet
+- school_catchments: no council column — add if LGA filtering needed in future
+- noise_overlays: no source column — airport name is the only identifier
+- Fringe VIC/NSW councils in zone_geometries have no zone_rules — partial responses expected (by design)
 
 #### ZoneIQ Architecture Notes
 - Strategic role: infrastructure API — powers WhatCanIBuild, ClearOffer, SubdivideIQ
@@ -108,6 +114,7 @@ Last updated: 9 April 2026
 - Address autocomplete: Nominatim (temporary — replace with Domain API when approved)
 - Domain API: status unknown — check developer.domain.com.au. Needed for active listing data only (price, beds/baths, DOM, agent). Sold data/AVM from Domain Insights/Pricefinder permanently blocked (VG licence restriction on that product).
 - PropTechData: email sent, no response. Follow up by phone. Needed for AVM + comparables + suburb stats in paid report.
+- ZoneIQ OpenAPI spec: live at zoneiq-sigma.vercel.app/api/openapi — reference this for all overlay field names and response shapes
 
 ### SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)
@@ -124,7 +131,7 @@ Last updated: 9 April 2026
 - VentraIP domains: zoneiq.com.au, whatcanibuild.com.au, clearoffer.com.au
 - Stripe: same account, WhatCanIBuild live, ClearOffer test
 - Resend: clearoffer.com.au verified (free tier, 1 domain limit)
-- RapidAPI: ZoneIQ listed, public, Basic/Pro/Ultra tiers — description needs updating for national coverage
+- RapidAPI: ZoneIQ listed, public, Basic/Pro/Ultra tiers — low priority, not actively promoted
 - Google Cloud: Geocoding API enabled, key in Vercel env as GOOGLE_GEOCODING_API_KEY
 
 ## Overnight build system
@@ -169,8 +176,9 @@ Last updated: 9 April 2026
 - Western Sydney Airport ANEF: ingested (4 contours, range bands)
 
 ## National data sources (not yet ingested)
-- Sydney Kingsford Smith ANEF: not available as open data — manual acquisition required
-- Essendon Airport ANEF: check planning.vic.gov.au again
+- Sydney Kingsford Smith ANEF: confirmed not open data — manual contact required
+- Essendon Airport ANEF: confirmed not in VIC Airport Environs MapServer — manual required
+- Avalon Airport ANEF: queryable layers found in Sprint 28 — to be scheduled
 - QFAO (QLD rural fallback): endpoint not publicly available — awaiting QRA publication
 
 ## Portfolio state repo

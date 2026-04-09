@@ -93,6 +93,7 @@ Last updated: 9 April 2026
 - Fringe VIC/NSW councils in zone_geometries have no zone_rules — partial responses expected (by design)
 
 #### ZoneIQ Architecture Notes
+- OpenAPI spec live at https://zoneiq-sigma.vercel.app/api/openapi — authoritative reference for all field names, overlay shapes per state, partial response handling
 - Strategic role: infrastructure API — powers WhatCanIBuild, ClearOffer, SubdivideIQ
 - WhatCanIBuild calls zoneiq-sigma.vercel.app NOT zoneiq.com.au (redirect issue)
 - Partial responses: HTTP 200 with rules: null and meta.partial: true when zone not seeded
@@ -146,6 +147,7 @@ Last updated: 9 April 2026
 - Slack listener: running 24/7 via Task Scheduler at C:/dev/claude-listener
 
 ## Key gotchas
+- ClearOffer: always check zoneiq-sigma.vercel.app/api/openapi before wiring new overlay fields — field names differ by state
 - Always use func not $$ for Supabase SQL
 - Never combine cd and git in same command
 - WhatCanIBuild calls zoneiq-sigma.vercel.app NOT zoneiq.com.au

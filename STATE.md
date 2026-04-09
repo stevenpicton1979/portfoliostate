@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 9 April 2026
+Last updated: 10 April 2026
 
 ## Products
 
@@ -25,6 +25,7 @@ Last updated: 9 April 2026
 - Marketing page: updated Sprint 27 — "Australia's planning zone API", 84 councils, all 6 overlay types, national demo addresses
 - DECISIONS.md: exists in repo — read before making architectural changes
 - Active backlog: BACKLOG.md in zoneiq repo — no [ ] sprints remaining as of 9 April 2026
+- Known issue: ZoneIQ returns meta.partial: true for addresses where zone rules not seeded (e.g. Carindale). Overlays should still be returned — overlay decoupling fix requested in ZoneIQ chat 10 April 2026, awaiting deploy.
 
 #### ZoneIQ Dataset State (DB audit 9 April 2026)
 
@@ -67,30 +68,14 @@ Last updated: 9 April 2026
 **character_overlays: 14,164** — Brisbane only
 
 #### ZoneIQ Sprint History
-- Sprints 1–15: Complete (SEQ zone geometries, overlays, RapidAPI launch)
-- Sprint 16: COMPLETE — QFAO fallback architecture wired. QFAO endpoint not publicly available — graceful null returned. Update QFAO_URL in lib/zone-lookup.ts when QRA publishes queryable FeatureServer.
-- Sprint 17: COMPLETE — ZONE_NOT_SEEDED gate removed, SEQ bounding box guard, Google geocoder, .vercelignore fix (data/ dir was 1.3GB)
-- Sprint 17b: COMPLETE — Brisbane zone rules seeded (LMR, SP, MU, CF, IN, SR confirmed present, total Brisbane rules = 18)
-- Sprint 18: COMPLETE — ClearOffer response shape validated, api_usage telemetry wired (12 rows confirmed)
-- Sprint 19: COMPLETE — 25,242 NSW zone polygons, 29 NSW_standard rules, geocoder NSW support
-- Sprint 20: COMPLETE — 540 NSW EPI flood polygons
-- Sprint 21: COMPLETE — 920 NSW school catchments, Western Sydney Airport ANEF (4 contours). Sydney KSF absent.
-- Sprint 22: COMPLETE — 22,254 VIC zone polygons, 1,742 LSIO/FO/SBO flood overlays, 21 VIC_standard rules
-- Sprint 23: COMPLETE — 888 VIC school zones, Melbourne ANEF20 + ANEF25 (Tullamarine). Essendon absent.
-- Sprint 24: COMPLETE — SEQ flood gap fill: GC 159,950 · Redland 23,700 · SC 1,561 · MBRC 1,000 · Logan 520 · Ipswich 288
-- Sprint 25: COMPLETE — National geocoder (lat -44 to -10, lng 112 to 154), state-aware suffix, API v2.0.0, 10-address national smoke test passed
-- Sprint 26: COMPLETE — OpenAPI spec rewritten to v2.0.0. All 6 overlays documented, partial response shape, error codes, live examples. Served at /api/openapi.
-- Sprint 27: COMPLETE — Marketing page updated. H1 "Australia's planning zone API", 84 councils, all 6 overlay types listed, national demo addresses, meta tags updated.
-- Sprint 28: COMPLETE — KSF ANEF: confirmed not in any NSW public ArcGIS service (NSW ePlanning SEPP Layer 280 is Western Sydney only). Essendon: confirmed not in VIC Airport Environs MapServer. Avalon Airport ANEF layers found — added to ideas to spec.
+- Sprints 1–28: COMPLETE — see previous STATE.md entries
 
 #### ZoneIQ Known Gaps
-- Sydney Kingsford Smith ANEF: confirmed not available as open data — manual contact required (planning@sydneyairport.com.au or NSW Planning spatial team)
+- Sydney Kingsford Smith ANEF: confirmed not available as open data — manual contact required
 - Essendon Airport ANEF: confirmed not in VIC Airport Environs MapServer — manual acquisition required
 - QFAO endpoint: awaiting QRA publication — update QFAO_URL in lib/zone-lookup.ts when live
+- Overlay decoupling fix: requested 10 April — overlays should return even when zone rules not seeded
 - RapidAPI listing: low priority — not actively promoted, no external users yet
-- school_catchments: no council column — add if LGA filtering needed in future
-- noise_overlays: no source column — airport name is the only identifier
-- Fringe VIC/NSW councils in zone_geometries have no zone_rules — partial responses expected (by design)
 
 #### ZoneIQ Architecture Notes
 - OpenAPI spec live at https://zoneiq-sigma.vercel.app/api/openapi — authoritative reference for all field names, overlay shapes per state, partial response handling
@@ -98,24 +83,77 @@ Last updated: 9 April 2026
 - WhatCanIBuild calls zoneiq-sigma.vercel.app NOT zoneiq.com.au (redirect issue)
 - Partial responses: HTTP 200 with rules: null and meta.partial: true when zone not seeded
 - ST_Contains(polygon, point) used for spatial queries — GiST index confirmed on zone_geometries
-- QFAO fallback: QLD only, live query, not ingested into Supabase
-- NSW flood: queried from flood_overlays where source = 'NSW_EPI'
-- VIC flood: queried from flood_overlays where source = 'Vicmap_Planning'
 
 ### ClearOffer — clearoffer.com.au
 - Repo: stevenpicton1979/buyerside (main branch, not master)
-- Live: clearoffer.com.au
+- Live: clearoffer.com.au (coming-soon mode — COMING_SOON env var controls root route)
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Stripe: test mode only
-- Status: ACTIVE BUILD — Sprints 4 & 5 complete. Sprint 6 next (requires Steve to test Buyer's Brief first).
-- ZoneIQ integration: calls zoneiq-sigma.vercel.app. Response shape validation complete (Sprint 4). All overlay fields mapped: flood (FPA code), bushfire, heritage, noise, character, schools.
-- Supabase: project dqzqqfcepsqhaxovneen, table scout_reports. PENDING MANUAL: run scripts/create-scout-reports.sql in Supabase SQL editor to add followup_sent + converted_to_paid columns. Required before Sprint 7.
-- Overlays displayed in Scout Report: flood, character, bushfire. Heritage + aircraft noise added in Sprint 6.
-- Suburb lookup table: 100 Brisbane suburbs with median, DOM, 12m growth, 10yr CAGR, clearance rate — SUBURB_MEDIANS constant in submit-email.js.
-- Address autocomplete: Nominatim (temporary — replace with Domain API when approved)
-- Domain API: status unknown — check developer.domain.com.au. Needed for active listing data only (price, beds/baths, DOM, agent). Sold data/AVM from Domain Insights/Pricefinder permanently blocked (VG licence restriction on that product).
-- PropTechData: email sent, no response. Follow up by phone. Needed for AVM + comparables + suburb stats in paid report.
-- ZoneIQ OpenAPI spec: live at zoneiq-sigma.vercel.app/api/openapi — reference this for all overlay field names and response shapes
+- Stripe: test mode only — switch to live before launch
+- Status: READY TO LAUNCH — pending Domain API approval + PropTechData terms confirmation
+- Rebuilt from scratch: 10 April 2026. Full rebuild in Claude.ai chat, then deployed via Claude Code.
+
+#### ClearOffer Architecture (post-rebuild)
+- 26 files: 11 API routes, 5 HTML pages, CSS, client config, SQL, smoke tests
+- All user-visible strings in two config files — rename is a 5-minute job:
+  - api/config.js (server-side: PRODUCT.NAME, PRICING, DISCLAIMER)
+  - public/js/config.js (client-side: all copy strings, CTAs, locked section labels)
+- COMING_SOON env var: true = serves coming-soon.html, false = serves index.html (launch switch)
+- vercel.json: / routes to api/home.js which reads COMING_SOON. All other routes rewrite to /public/$1
+- Local dev: vercel dev --listen 3001. Never npm run dev (recursive invocation error).
+
+#### ClearOffer Data Layer
+- Free Scout Report (target: under $0.15/lookup):
+  - Overlays: ZoneIQ (free) — flood, bushfire, heritage, character, noise, schools
+  - Suburb stats: Supabase static lookup (100 Brisbane suburbs) — cache table ready for PropTechData monthly population
+  - AVM teaser: derived ±8% of suburb median
+  - Verdict: Claude Haiku (~$0.02)
+  - Listing data: PENDING Domain API approval
+- Paid Buyer's Brief ($149):
+  - Generation: Claude Sonnet streaming (~$0.05–0.10)
+  - AVM + comparables + suburb stats: PropTechData STUBBED — pending terms confirmation
+  - All overlays explained in plain English: ZoneIQ + Claude
+  - Offer recommendation + negotiation script: Claude
+- PropTechData constraint: NEVER called on free report. Paid report only.
+
+#### ClearOffer Supabase (project: dqzqqfcepsqhaxovneen)
+- Tables: scout_reports, suburb_stats_cache
+- scout_reports: id, email, address, created_at, report_data, followup_sent, converted_to_paid
+- suburb_stats_cache: populated monthly from PropTechData (once terms confirmed)
+- SQL: scripts/create-tables.sql — run in Supabase SQL editor if tables missing
+- One free Scout Report per email address (globally, not per address). Waitlist entries use address='__waitlist__' and are excluded from this check.
+
+#### ClearOffer Stripe
+- Test mode — do NOT switch to live until Steve confirms
+- Checkout: $149 AUD one-time, price_data (dynamic, no pre-created price ID needed)
+- Webhook: checkout.session.completed → sets converted_to_paid: true
+- Payment verification in buyers-brief.js: checks Supabase first, then Stripe direct (session_id fallback for local dev without webhook forwarder)
+- bodyParser: false on stripe-webhook.js (required for signature verification)
+
+#### ClearOffer Env Vars (Vercel project: buyerside)
+- Development: BASE_URL=http://localhost:3001, ALLOWED_ORIGIN=http://localhost:3001, COMING_SOON=true
+- Production: BASE_URL=https://clearoffer.com.au, ALLOWED_ORIGIN=https://clearoffer.com.au, COMING_SOON=true (set false when ready to launch)
+- All environments: ANTHROPIC_API_KEY, STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_KEY, ZONEIQ_URL=https://zoneiq-sigma.vercel.app, RESEND_API_KEY, GOOGLE_GEOCODING_API_KEY
+- Pending (blank until approved): DOMAIN_CLIENT_ID, DOMAIN_CLIENT_SECRET, PROPTECH_DATA_API_KEY, CRON_SECRET
+- Note: Google key needs Places API enabled on GCP project (not just Geocoding API) for autocomplete to work
+
+#### ClearOffer Sprints (post-rebuild)
+- Sprint 1: COMPLETE — smoke tests passing (17/17), local dev verified
+- Sprint 2: COMPLETE — autocomplete UX polish, keyboard nav, loading indicator, mobile
+- Sprint 3: COMPLETE — Scout Report overlay QA across 5 Brisbane addresses
+- Sprint 4: COMPLETE — email gate + Supabase integration tested
+- Sprint 5: COMPLETE — Stripe checkout integration tested
+- Sprint 6: COMPLETE — Buyer's Brief generation tested, markdown rendering fixed, fake header removed
+- Sprint 7: COMPLETE — follow-up email job tested
+- Sprint 8: COMPLETE — mobile QA pass
+- Sprint 9: BLOCKED — Domain API approval pending (api@domain.com.au — chaser sent 9 April)
+- Sprint 10: BLOCKED — PropTechData VG licence + pricing confirmation pending
+- Sprint 11: BLOCKED — launch prep, awaiting Steve's go signal
+
+#### ClearOffer Known Issues
+- ZoneIQ partial responses: addresses where zone rules not seeded show amber warning banner (correct graceful degradation). Fix lives in ZoneIQ repo.
+- Autocomplete: requires Places API enabled on GCP project. If not enabled, users can still type full address and press enter.
+- Verdict prompt: occasionally generates meta text instead of a sharp one-liner when no listing data available (Domain API not yet connected). Acceptable until Domain API approved.
+- COMING_SOON: currently set to true on all Vercel environments — set to false in Production when ready to launch.
 
 ### SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)
@@ -127,13 +165,13 @@ Last updated: 9 April 2026
 ## Infrastructure
 - Supabase project: fzykfxesznyiigoyeyed (Pro tier, 8GB — estimated 2–3GB used)
 - Tables: zone_geometries, zone_rules, flood_overlays, character_overlays, school_catchments, bushfire_overlays, wcib_reports, api_keys, api_usage, heritage_overlays, noise_overlays
-- ClearOffer Supabase project: dqzqqfcepsqhaxovneen, table: scout_reports
+- ClearOffer Supabase project: dqzqqfcepsqhaxovneen, tables: scout_reports, suburb_stats_cache
 - Vercel team: stevenpicton1979s-projects
 - VentraIP domains: zoneiq.com.au, whatcanibuild.com.au, clearoffer.com.au
 - Stripe: same account, WhatCanIBuild live, ClearOffer test
 - Resend: clearoffer.com.au verified (free tier, 1 domain limit)
 - RapidAPI: ZoneIQ listed, public, Basic/Pro/Ultra tiers — low priority, not actively promoted
-- Google Cloud: Geocoding API enabled, key in Vercel env as GOOGLE_GEOCODING_API_KEY
+- Google Cloud: Geocoding API + Places API enabled, key in Vercel env as GOOGLE_GEOCODING_API_KEY
 
 ## Overnight build system
 - Each product repo has BACKLOG.md — Claude Code reads and executes tasks autonomously
@@ -148,6 +186,9 @@ Last updated: 9 April 2026
 
 ## Key gotchas
 - ClearOffer: always check zoneiq-sigma.vercel.app/api/openapi before wiring new overlay fields — field names differ by state
+- ClearOffer: PropTechData NEVER on free report — paid report only, currently stubbed
+- ClearOffer: vercel dev --listen 3001 only. Never npm run dev.
+- ClearOffer: COMING_SOON env var controls root — true=coming-soon, false=live app
 - Always use func not $$ for Supabase SQL
 - Never combine cd and git in same command
 - WhatCanIBuild calls zoneiq-sigma.vercel.app NOT zoneiq.com.au

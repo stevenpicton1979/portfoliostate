@@ -82,8 +82,9 @@ Last updated: 9 April 2026
 - QFAO endpoint: awaiting QRA publication — update QFAO_URL in lib/zone-lookup.ts when live
 - RapidAPI listing: needs updating to reflect NSW + VIC national coverage
 - zoneiq.com.au marketing page: needs updating to reflect national coverage
-- school_catchments: no council column — add if LGA filtering needed in future
-- Fringe councils in zone_geometries have no zone_rules — return partial responses (by design)
+- school_catchments: no council column — cannot filter by LGA
+- noise_overlays has no source column — airport name is the identifier
+- Fringe VIC/NSW councils in zone_geometries have no zone_rules — partial responses expected
 
 #### ZoneIQ Architecture Notes
 - Strategic role: infrastructure API — powers WhatCanIBuild, ClearOffer, SubdivideIQ
@@ -99,8 +100,14 @@ Last updated: 9 April 2026
 - Live: clearoffer.com.au
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
 - Stripe: test mode only
-- Status: HOLDING — waiting Domain API + PropTechData approvals
-- ZoneIQ integration: Sprint 18 complete — response shape validated, overlays.flood/bushfire/heritage/noise/character/schools all wired. Disclaimer shown when meta.partial = true.
+- Status: ACTIVE BUILD — Sprints 4 & 5 complete. Sprint 6 next (requires Steve to test Buyer's Brief first).
+- ZoneIQ integration: calls zoneiq-sigma.vercel.app. Response shape validation complete (Sprint 4). All overlay fields mapped: flood (FPA code), bushfire, heritage, noise, character, schools.
+- Supabase: project dqzqqfcepsqhaxovneen, table scout_reports. PENDING MANUAL: run scripts/create-scout-reports.sql in Supabase SQL editor to add followup_sent + converted_to_paid columns. Required before Sprint 7.
+- Overlays displayed in Scout Report: flood, character, bushfire. Heritage + aircraft noise added in Sprint 6.
+- Suburb lookup table: 100 Brisbane suburbs with median, DOM, 12m growth, 10yr CAGR, clearance rate — SUBURB_MEDIANS constant in submit-email.js.
+- Address autocomplete: Nominatim (temporary — replace with Domain API when approved)
+- Domain API: status unknown — check developer.domain.com.au. Needed for active listing data only (price, beds/baths, DOM, agent). Sold data/AVM from Domain Insights/Pricefinder permanently blocked (VG licence restriction on that product).
+- PropTechData: email sent, no response. Follow up by phone. Needed for AVM + comparables + suburb stats in paid report.
 
 ### SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)
@@ -112,6 +119,7 @@ Last updated: 9 April 2026
 ## Infrastructure
 - Supabase project: fzykfxesznyiigoyeyed (Pro tier, 8GB — estimated 2–3GB used)
 - Tables: zone_geometries, zone_rules, flood_overlays, character_overlays, school_catchments, bushfire_overlays, wcib_reports, api_keys, api_usage, heritage_overlays, noise_overlays
+- ClearOffer Supabase project: dqzqqfcepsqhaxovneen, table: scout_reports
 - Vercel team: stevenpicton1979s-projects
 - VentraIP domains: zoneiq.com.au, whatcanibuild.com.au, clearoffer.com.au
 - Stripe: same account, WhatCanIBuild live, ClearOffer test

@@ -32,8 +32,19 @@ This file is the single source of truth. Rules:
 - Repo: stevenpicton1979/zoneiq
 - Live: zoneiq.com.au + zoneiq-sigma.vercel.app
 - Stack: Next.js 14 + Vercel + Supabase PostGIS
-- Coverage: Brisbane, Gold Coast, Moreton Bay, Sunshine Coast, Ipswich, Logan, Redland = 189,751 polygons
-- Overlays: flood, character, schools, bushfire, heritage, aircraft noise (ANEF), acid sulfate soils, contaminated land link-out
+- Coverage: Brisbane, Gold Coast, Moreton Bay, Sunshine Coast, Ipswich, Logan, Redland = 190,751 polygons
+- Overlay data (from DATASET_AUDIT.md — 8 April 2026):
+  - Zoning: 7 councils FULL. Note: Brisbane zone rules severely incomplete (12 rules only — ZONE_NOT_SEEDED errors likely)
+  - Flood: Brisbane ONLY (7,102 polygons) — 6 other councils have ZERO flood data. Sprint 16 (QFAO fallback) running.
+  - Character overlay: Brisbane ONLY (14,164 polygons)
+  - School catchments: Brisbane ONLY (398 catchments)
+  - Bushfire: 13 SEQ LGAs (132,000 polygons) — best coverage of any overlay
+  - Heritage: State QLD-wide (1,800 records) + local Brisbane only (1,857 records)
+  - Aircraft noise (ANEF): Brisbane Airport, Archerfield, Gold Coast (14 contours)
+  - Acid sulfate soils: QLD statewide via live ArcGIS query
+  - Contaminated land: link-out only, not a returned data field
+  - api_usage table: 0 rows — usage telemetry unwired (fix before ClearOffer launch)
+  - Full dataset audit: see DATASET_AUDIT.md in zoneiq repo
 - RapidAPI: listed and public, proxy auth working, RAPIDAPI_PROXY_SECRET in Vercel env
 - API keys: working, stored in api_keys table
 - Nearest polygon fallback: plpgsql function confirmed in Supabase
@@ -69,6 +80,7 @@ This file is the single source of truth. Rules:
   - Resend email from hello@clearoffer.com.au ✅
   - Coming soon page live at clearoffer.com.au ✅
   - clearoffer_notify Supabase table capturing early access emails ✅
+  - ZoneIQ overlay availability for ClearOffer: Full data (zoning, flood, character, schools, bushfire, heritage, noise, acid sulfate) for Brisbane only. Partial for Gold Coast and other SEQ councils (flood/character/schools missing). See ZoneIQ DATASET_AUDIT.md for full coverage matrix.
 
 - What does NOT work / is mock data:
   - Domain.com.au API not connected — listings data is placeholder/mock

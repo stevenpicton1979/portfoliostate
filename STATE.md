@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 10 April 2026
+Last updated: 10 April 2026 (ZoneIQ overlay decoupling fix deployed)
 
 ## Products
 
@@ -24,8 +24,7 @@ Last updated: 10 April 2026
 - OpenAPI spec: live at zoneiq-sigma.vercel.app/api/openapi (updated Sprint 26, v2.0.0 — full response shape, all overlays, national coverage)
 - Marketing page: updated Sprint 27 — "Australia's planning zone API", 84 councils, all 6 overlay types, national demo addresses
 - DECISIONS.md: exists in repo — read before making architectural changes
-- Active backlog: BACKLOG.md in zoneiq repo — no [ ] sprints remaining as of 9 April 2026
-- Known issue: ZoneIQ returns meta.partial: true for addresses where zone rules not seeded (e.g. Carindale). Overlays should still be returned — overlay decoupling fix requested in ZoneIQ chat 10 April 2026, awaiting deploy.
+- Active backlog: BACKLOG.md in zoneiq repo — no [ ] sprints remaining as of 10 April 2026
 
 #### ZoneIQ Dataset State (DB audit 9 April 2026)
 
@@ -74,7 +73,6 @@ Last updated: 10 April 2026
 - Sydney Kingsford Smith ANEF: confirmed not available as open data — manual contact required
 - Essendon Airport ANEF: confirmed not in VIC Airport Environs MapServer — manual acquisition required
 - QFAO endpoint: awaiting QRA publication — update QFAO_URL in lib/zone-lookup.ts when live
-- Overlay decoupling fix: requested 10 April — overlays should return even when zone rules not seeded
 - RapidAPI listing: low priority — not actively promoted, no external users yet
 
 #### ZoneIQ Architecture Notes
@@ -150,7 +148,6 @@ Last updated: 10 April 2026
 - Sprint 11: BLOCKED — launch prep, awaiting Steve's go signal
 
 #### ClearOffer Known Issues
-- ZoneIQ partial responses: addresses where zone rules not seeded show amber warning banner (correct graceful degradation). Fix lives in ZoneIQ repo.
 - Autocomplete: requires Places API enabled on GCP project. If not enabled, users can still type full address and press enter.
 - Verdict prompt: occasionally generates meta text instead of a sharp one-liner when no listing data available (Domain API not yet connected). Acceptable until Domain API approved.
 - COMING_SOON: currently set to true on all Vercel environments — set to false in Production when ready to launch.

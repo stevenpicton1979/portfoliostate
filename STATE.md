@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 10 April 2026 (ZoneIQ overlay decoupling fix deployed)
+Last updated: 10 April 2026 (Sprint 29 added — QLD land valuation)
 
 ## Products
 
@@ -24,7 +24,7 @@ Last updated: 10 April 2026 (ZoneIQ overlay decoupling fix deployed)
 - OpenAPI spec: live at zoneiq-sigma.vercel.app/api/openapi (updated Sprint 26, v2.0.0 — full response shape, all overlays, national coverage)
 - Marketing page: updated Sprint 27 — "Australia's planning zone API", 84 councils, all 6 overlay types, national demo addresses
 - DECISIONS.md: exists in repo — read before making architectural changes
-- Active backlog: BACKLOG.md in zoneiq repo — no [ ] sprints remaining as of 10 April 2026
+- Active backlog: BACKLOG.md in zoneiq repo — Sprint 29 added 10 April 2026 (QLD land valuation)
 
 #### ZoneIQ Dataset State (DB audit 9 April 2026)
 
@@ -74,6 +74,7 @@ Last updated: 10 April 2026 (ZoneIQ overlay decoupling fix deployed)
 - Essendon Airport ANEF: confirmed not in VIC Airport Environs MapServer — manual acquisition required
 - QFAO endpoint: awaiting QRA publication — update QFAO_URL in lib/zone-lookup.ts when live
 - RapidAPI listing: low priority — not actively promoted, no external users yet
+- Land valuation: QLD statutory values (QLD Globe / VG) — Sprint 29 backlog, not yet ingested
 
 #### ZoneIQ Architecture Notes
 - OpenAPI spec live at https://zoneiq-sigma.vercel.app/api/openapi — authoritative reference for all field names, overlay shapes per state, partial response handling

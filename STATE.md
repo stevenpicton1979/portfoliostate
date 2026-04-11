@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 12 April 2026 (PropertyData Sprint 4.1+4.2 complete — suburb overlay stats, context enrichment, reliability tiers, methodology tab)
+Last updated: 12 April 2026 (PropertyData Sprint 4.2.2 complete — enhanced flood data with 10 layers, risk classification, plain-English summary)
 
 ## Products
 
@@ -163,15 +163,15 @@ Last updated: 12 April 2026 (PropertyData Sprint 4.1+4.2 complete — suburb ove
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
-- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6+3.7+3.8+3.9+4.1+4.2 complete. ClearOffer switched over, data audit done, free report polished + aligned. Three-layer test strategy in place. Demographics, suburb momentum, amenity proximity, AI neighbourhood narrative, suburb overlay context all live.
+- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6+3.7+3.8+3.9+4.1+4.2+4.2.2 complete. ClearOffer switched over, data audit done, free report polished + aligned. Three-layer test strategy in place. Demographics, suburb momentum, amenity proximity, AI neighbourhood narrative, suburb overlay context, enhanced flood risk classification all live.
 - Dashboard: 4-tab test UI (Report Preview, Data Quality, Raw Fields, Methodology) with satellite imagery, BCC flood/overlay layers
-- Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive
+- Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive. Flood section leads with colour-coded risk headline (High/Medium/Low/Very Low) + plain-English summary paragraph.
 - CI: GitHub Actions on push/PR to master (Node 18+20). 6 test files: adapter contracts (41 tests), golden response schema (20 tests), field registry, ICSEA, suburb stats, renderer alignment. Adapter coverage enforcement gate: every adapter in api/sources/ must have schema + fixtures or CI fails. PLUS accuracy test workflow (nightly + on push to api/sources/**) — 13 real Brisbane addresses, 49 pass / 0 fail / 15 warnings
 - Vercel auto-deploy: DISABLED (vercel.json git.deploymentEnabled: false) — do not deploy until Steve approves
 
 #### PropertyData Architecture
 - Single POST endpoint: /api/lookup { address, tier: "free"|"paid" }
-- Field registry: 68 fields defined (61 live, 1 pivot, 6 blocked)
+- Field registry: 63 fields defined (includes 4 new flood risk fields from Sprint 4.2.2)
 - 15 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, bcc-amenity, zoneiq, icsea, suburb-stats, qps-crime, google-streetview, sa2-geocoder, abs-demographics, suburb-momentum, ai-neighbourhood, suburb-context
 - Execution: cadastre first (gets polygon), then all others in parallel, ICSEA last (needs school names)
 - Every field carries metadata: source, status, description, updated_at
@@ -191,6 +191,7 @@ Last updated: 12 April 2026 (PropertyData Sprint 4.1+4.2 complete — suburb ove
 - Sprint 3.9 (Demographic Layer + Suburb Momentum + Amenity Proximity): COMPLETE — 9/9 tasks. 5 new adapters (sa2-geocoder, abs-demographics, suburb-momentum, bcc-amenity, ai-neighbourhood) with schemas + fixtures. 11 new fields (6 free, 5 paid). Pre-computed data files: suburb-sa2.json, abs-suburb-stats.json, suburb-momentum.json. New report sections: Suburb Profile (income/owner-occ/SEIFA/momentum), Neighbourhood Amenities (bus stops/parks), Neighbourhood Character (AI narrative, paid only). All 14 adapters pass adapter coverage enforcement gate.
 - Sprint 4.1+4.2 (Suburb Overlay Stats + Context Enrichment): COMPLETE — Precomputed suburb overlay prevalence for 101 suburbs × 11 overlay types using BCC ArcGIS returnCountOnly. New suburb-context adapter compares lot overlays against suburb prevalence — generates context notes when lot is clear but suburb has ≥5% prevalence. Data quality analysis revealed flood_overland BROKEN (67/101 suburbs >100% raw ratio), bushfire DEGRADED (10/101), all others RELIABLE. Added LAYER_RELIABILITY tiers to exclude broken layers, caveat degraded. New Methodology tab in UI. Decision D7 in DECISIONS.md documents tier criteria for future LGA builds. 15 adapters, 106 tests passing, golden response re-recorded.
 - Sprint 4.2.1 (Overlay Data Quality Fix): COMPLETE — apostrophe syntax fix, record script auth fix (Referer header for same-origin bypass), lot_plan removed from free-tier critical keys snapshot.
+  - Sprint 4.2.2 (Enhanced Flood Data): COMPLETE — 3 new BCC Flood Awareness layers (Overall Risk, Creek Risk, Storm Tide) via ArcGIS FeatureServer. Enhanced overland flow from boolean to object with risk level. Added extractWorstRisk() + floodPlainEnglish() helpers. 4 new fields: flood_risk_overall, flood_creek_risk, flood_storm_tide, flood_summary. Report renders colour-coded risk headline + plain-English summary. Property Score flood penalty scales by risk (High=-20, Medium=-15, Low=-8, Very Low=-4). Methodology tab updated with AEP classification table and 10-layer flood detail table. 106 tests passing, golden response re-recorded (49 fields, 44 with data).
 
 #### PropertyData Data Audit (11 April 2026)
 - Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)

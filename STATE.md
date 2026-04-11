@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 12 April 2026 (PropertyData Sprint 3.9 complete — demographics, momentum, amenities, AI narrative)
+Last updated: 12 April 2026 (PropertyData Sprint 4.1+4.2 complete — suburb overlay stats, context enrichment, reliability tiers, methodology tab)
 
 ## Products
 
@@ -163,8 +163,8 @@ Last updated: 12 April 2026 (PropertyData Sprint 3.9 complete — demographics, 
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
-- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6+3.7+3.8+3.9 complete. ClearOffer switched over, data audit done, free report polished + aligned. Three-layer test strategy in place. Demographics, suburb momentum, amenity proximity, AI neighbourhood narrative all live.
-- Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers
+- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6+3.7+3.8+3.9+4.1+4.2 complete. ClearOffer switched over, data audit done, free report polished + aligned. Three-layer test strategy in place. Demographics, suburb momentum, amenity proximity, AI neighbourhood narrative, suburb overlay context all live.
+- Dashboard: 4-tab test UI (Report Preview, Data Quality, Raw Fields, Methodology) with satellite imagery, BCC flood/overlay layers
 - Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive
 - CI: GitHub Actions on push/PR to master (Node 18+20). 6 test files: adapter contracts (41 tests), golden response schema (20 tests), field registry, ICSEA, suburb stats, renderer alignment. Adapter coverage enforcement gate: every adapter in api/sources/ must have schema + fixtures or CI fails. PLUS accuracy test workflow (nightly + on push to api/sources/**) — 13 real Brisbane addresses, 49 pass / 0 fail / 15 warnings
 - Vercel auto-deploy: DISABLED (vercel.json git.deploymentEnabled: false) — do not deploy until Steve approves
@@ -172,7 +172,7 @@ Last updated: 12 April 2026 (PropertyData Sprint 3.9 complete — demographics, 
 #### PropertyData Architecture
 - Single POST endpoint: /api/lookup { address, tier: "free"|"paid" }
 - Field registry: 68 fields defined (61 live, 1 pivot, 6 blocked)
-- 14 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, bcc-amenity, zoneiq, icsea, suburb-stats, qps-crime, google-streetview, sa2-geocoder, abs-demographics, suburb-momentum, ai-neighbourhood
+- 15 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, bcc-amenity, zoneiq, icsea, suburb-stats, qps-crime, google-streetview, sa2-geocoder, abs-demographics, suburb-momentum, ai-neighbourhood, suburb-context
 - Execution: cadastre first (gets polygon), then all others in parallel, ICSEA last (needs school names)
 - Every field carries metadata: source, status, description, updated_at
 - Dashboard: Report Preview (ClearOffer buyer view), Data Quality (coverage, source health), Raw Fields (grouped table + JSON)
@@ -189,11 +189,13 @@ Last updated: 12 April 2026 (PropertyData Sprint 3.9 complete — demographics, 
 - Sprint 3.8 (Free Report UX Polish): COMPLETE — tooltips, Property Score ring, map lock, contextual data. Every non-green risk card has source tooltip + paid tier hook. Score ring SVG renders cleanly. Map scroll-zoom disabled with reset button.
 - Sprint 3.8.5 (Testing Strategy): COMPLETE — Three-layer testing framework. Layer 1: 41 adapter contract tests (fixture-based, CI, $0). Layer 2: 20 golden response schema tests (CI, $0). Layer 3: API health check script (manual, ~8 API calls). Schemas for all 14 adapters. 29 fixture files (happy path + null per adapter + golden response). TESTING.md documentation. CI workflow updated.
 - Sprint 3.9 (Demographic Layer + Suburb Momentum + Amenity Proximity): COMPLETE — 9/9 tasks. 5 new adapters (sa2-geocoder, abs-demographics, suburb-momentum, bcc-amenity, ai-neighbourhood) with schemas + fixtures. 11 new fields (6 free, 5 paid). Pre-computed data files: suburb-sa2.json, abs-suburb-stats.json, suburb-momentum.json. New report sections: Suburb Profile (income/owner-occ/SEIFA/momentum), Neighbourhood Amenities (bus stops/parks), Neighbourhood Character (AI narrative, paid only). All 14 adapters pass adapter coverage enforcement gate.
+- Sprint 4.1+4.2 (Suburb Overlay Stats + Context Enrichment): COMPLETE — Precomputed suburb overlay prevalence for 101 suburbs × 11 overlay types using BCC ArcGIS returnCountOnly. New suburb-context adapter compares lot overlays against suburb prevalence — generates context notes when lot is clear but suburb has ≥5% prevalence. Data quality analysis revealed flood_overland BROKEN (67/101 suburbs >100% raw ratio), bushfire DEGRADED (10/101), all others RELIABLE. Added LAYER_RELIABILITY tiers to exclude broken layers, caveat degraded. New Methodology tab in UI. Decision D7 in DECISIONS.md documents tier criteria for future LGA builds. 15 adapters, 106 tests passing, golden response re-recorded.
+- Sprint 4.2.1 (Overlay Data Quality Fix): COMPLETE — apostrophe syntax fix, record script auth fix (Referer header for same-origin bypass), lot_plan removed from free-tier critical keys snapshot.
 
 #### PropertyData Data Audit (11 April 2026)
 - Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)
 - Accuracy: 6/7 sources rated High or Very High (all BCC data authoritative). suburb-stats is STATIC — critical credibility risk.
-- Product completeness: ~70% of a complete buyer report. Property identity, zoning, flood, overlays, infrastructure, schools, noise all 100%. Crime, demographics, amenities now live (Sprint 3.5 + 3.9). Valuation, listing, title still 0% (blocked on external APIs).
+- Product completeness: ~72% of a complete buyer report. Property identity, zoning, flood, overlays, infrastructure, schools, noise all 100%. Crime, demographics, amenities now live (Sprint 3.5 + 3.9). Valuation, listing, title still 0% (blocked on external APIs).
 - Free report launch blockers (Sprint 3 resolved): suburb stats %, road hierarchy display, plain-English, crime, street view, landslide, map proxy, branding. Remaining: Vercel deploy, live suburb stats API
 - See Gap Analysis sheet for full P0–P3 prioritisation
 

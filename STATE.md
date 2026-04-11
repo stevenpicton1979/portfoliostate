@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 11 April 2026 (PropertyData Sprint 4 prep — accuracy testing, bushfire buffer fix, flood cascade fix, CI accuracy workflow, Sprint 5 AI insights scoped)
+Last updated: 11 April 2026 (PropertyData Sprint 3.8 complete + testing strategy + Sprint 3.9 validated and ready for overnight build)
 
 ## Products
 
@@ -163,10 +163,10 @@ Last updated: 11 April 2026 (PropertyData Sprint 4 prep — accuracy testing, bu
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
-- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6 complete. ClearOffer switched over, data audit done, free report polished + aligned
+- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6+3.7+3.8 complete. ClearOffer switched over, data audit done, free report polished + aligned. Three-layer test strategy in place.
 - Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers
 - Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive
-- CI: GitHub Actions on push/PR to master (Node 18+20). 45 unit tests: field registry integrity, ICSEA adapter, suburb stats, renderer–registry key alignment. PLUS accuracy test workflow (nightly + on push to api/sources/**) — 13 real Brisbane addresses, 49 pass / 0 fail / 15 warnings
+- CI: GitHub Actions on push/PR to master (Node 18+20). 6 test files: adapter contracts (41 tests), golden response schema (20 tests), field registry, ICSEA, suburb stats, renderer alignment. PLUS accuracy test workflow (nightly + on push to api/sources/**) — 13 real Brisbane addresses, 49 pass / 0 fail / 15 warnings
 - Vercel auto-deploy: DISABLED (vercel.json git.deploymentEnabled: false) — do not deploy until Steve approves
 
 #### PropertyData Architecture
@@ -185,7 +185,10 @@ Last updated: 11 April 2026 (PropertyData Sprint 4 prep — accuracy testing, bu
 - Sprint 3: COMPLETE — 10/10 tasks. Landslide overlay, crime data, street view metadata, map proxy, ClearOffer branding, plain-English risk explanations, QA pass.
 - Sprint 3.5: COMPLETE — Light theme, Property Score gauge, value callout ($300-800 lawyer comparison), 9 risk cards with cost-impact copy, section value statements, paid tier CTA, infrastructure tag fix (check boolean props not object truthiness), road type cleanup.
 - Sprint 3.6: COMPLETE — 6/6 tasks. Fixed 7 field key mismatches (heritage, noise, overland flow, acid sulfate, biodiversity, school names). Fixed ICSEA object→number extraction. Street View image live (GCP API enabled). Suburb stats timestamp. 45 unit tests + GitHub Actions CI.
-- Sprint 3.7 (Accuracy Testing): IN PROGRESS — 13-address accuracy test suite (49P/0F/15W). Bushfire buffer vs direct hazard regex fix (buffer=amber, direct=red). Flood badge cascade fix (creek→river→overland→AEP). Chapel Hill landslide test case added. CI accuracy workflow (.github/workflows/accuracy.yml) with GitHub secrets. Diagnostic scripts: check-carindale-character.js, find-landslide-address.js.
+- Sprint 3.7 (Accuracy Testing): COMPLETE — 13-address accuracy test suite (49P/0F/15W). Bushfire buffer vs direct hazard regex fix (buffer=amber, direct=red). Flood badge cascade fix (creek→river→overland→AEP). Chapel Hill landslide test case added. CI accuracy workflow (.github/workflows/accuracy.yml) with GitHub secrets. Diagnostic scripts: check-carindale-character.js, find-landslide-address.js.
+- Sprint 3.8 (Free Report UX Polish): COMPLETE — tooltips, Property Score ring, map lock, contextual data. Every non-green risk card has source tooltip + paid tier hook. Score ring SVG renders cleanly. Map scroll-zoom disabled with reset button.
+- Sprint 3.8.5 (Testing Strategy): COMPLETE — Three-layer testing framework. Layer 1: 41 adapter contract tests (fixture-based, CI, $0). Layer 2: 20 golden response schema tests (CI, $0). Layer 3: API health check script (manual, ~8 API calls). Schemas for all 9 adapters. 19 fixture files (happy path + null per adapter + golden response). TESTING.md documentation. CI workflow updated.
+- Sprint 3.9 (Demographic Layer + Suburb Momentum + Amenity Proximity): READY — All 9 tasks validated. SA2 static lookup (ABS allocation file), ABS Census QuickStats confirmed, 2016→2021 momentum deltas computed, BCC bus stops API tested, OSM Overpass parks query tested. Overnight build ready.
 
 #### PropertyData Data Audit (11 April 2026)
 - Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)

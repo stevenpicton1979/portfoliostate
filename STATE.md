@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 11 April 2026 (PropertyData Sprint 1+2 complete — ClearOffer switchover done)
+Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE — 9 source adapters, ClearOffer branding, free report polished)
 
 ## Products
 
@@ -163,27 +163,38 @@ Last updated: 11 April 2026 (PropertyData Sprint 1+2 complete — ClearOffer swi
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
-- Status: LIVE (local) — Sprint 1+2 complete, ClearOffer switched over
+- Status: LIVE (local) — Sprint 1+2+3 complete, ClearOffer switched over, data audit done, free report polished
+- Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers, ClearOffer branding
 
 #### PropertyData Architecture
 - Single POST endpoint: /api/lookup { address, tier: "free"|"paid" }
-- Field registry: 55 fields defined (34 live, rest pivot/blocked)
-- 7 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, zoneiq, icsea, suburb-stats
+- Field registry: 64 fields defined (~48 live, 8 pivot, 6 blocked)
+- 9 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, zoneiq, icsea, suburb-stats, qps-crime, google-streetview
 - Execution: cadastre first (gets polygon), then all others in parallel, ICSEA last (needs school names)
 - Every field carries metadata: source, status, description, updated_at
-- Test UI at localhost:3002 renders all fields automatically
+- Dashboard: Report Preview (ClearOffer buyer view), Data Quality (coverage, source health), Raw Fields (grouped table + JSON)
+- Map: Esri World Imagery satellite base + BCC Flood Awareness MapServer overlay + lot polygon. Layer controls for base/overlays.
 - DECISIONS.md in repo — read before architectural changes
 
 #### PropertyData Sprints
-- Sprint 1: COMPLETE — 12/12 tasks, 11/11 smoke tests. All 34 live fields extracted from ClearOffer. 5 Brisbane addresses verified. 18m 48s build time.
-- Sprint 2: COMPLETE — ClearOffer switchover. zone-lookup.js rewritten (713→38 lines). buyers-brief.js switched from direct ZoneIQ to PropertyData (paid tier). ClearOffer 17/17 smoke tests pass. Zero direct BCC/ZoneIQ calls from ClearOffer.
+- Sprint 1: COMPLETE — 12/12 tasks, 11/11 smoke tests. All 34 live fields extracted from ClearOffer. 5 Brisbane addresses verified.
+- Sprint 2: COMPLETE — ClearOffer switchover. zone-lookup.js (713→38 lines). buyers-brief.js uses PropertyData paid tier. 17/17 ClearOffer smoke tests pass. Zero direct BCC/ZoneIQ calls.
+- Sprint 3: COMPLETE — 10/10 tasks. Landslide overlay, crime data, street view metadata, map proxy, ClearOffer branding, plain-English risk explanations, QA pass.
+
+#### PropertyData Data Audit (11 April 2026)
+- Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)
+- Accuracy: 6/7 sources rated High or Very High (all BCC data authoritative). suburb-stats is STATIC — critical credibility risk.
+- Product completeness: ~55% of a complete buyer report. Property identity, zoning, flood, overlays, infrastructure, schools, noise all 100%. Valuation, listing, title, crime, amenity, demographics all 0%.
+- Free report launch blockers (Sprint 3 resolved): suburb stats %, road hierarchy display, plain-English, crime, street view, landslide, map proxy, branding. Remaining: Vercel deploy, live suburb stats API
+- See Gap Analysis sheet for full P0–P3 prioritisation
 
 #### PropertyData Known Gaps
-- GNAF resolution: not yet implemented (ClearOffer previously had this — centroid override for line-layer queries)
+- GNAF resolution: not yet implemented (centroid override for line-layer queries)
 - ANEF detail: only returns boolean affected, not contour number or airport name
 - ICSEA bootstrap: ~80 schools in data/icsea-scores.json — full dataset needs scripts/fetch-icsea.js
 - Deployment: local only — not yet deployed to Vercel
-- Sprint 3+: see DATA_SOURCES_v2.md Section 5
+- Suburb stats: STATIC TABLE — drifts monthly. Must replace with live API (PropTrack/CoreLogic) before any public launch
+- Blocked on external APIs: PropTechData (AVM), Domain (listing), InfoTrack (title)
 
 ### SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)

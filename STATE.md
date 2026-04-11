@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 10 April 2026 (Sprint 29 added — QLD land valuation)
+Last updated: 11 April 2026 (PropertyData Sprint 1+2 complete — ClearOffer switchover done)
 
 ## Products
 
@@ -100,17 +100,21 @@ Last updated: 10 April 2026 (Sprint 29 added — QLD land valuation)
 - vercel.json: / routes to api/home.js which reads COMING_SOON. All other routes rewrite to /public/$1
 - Local dev: vercel dev --listen 3001. Never npm run dev (recursive invocation error).
 
-#### ClearOffer Data Layer
+#### ClearOffer Data Layer (Sprint 2: PropertyData switchover complete)
+- All property data now flows through PropertyData API (localhost:3002 / TBD prod)
+- zone-lookup.js is a thin wrapper: POST to PropertyData, map response to ClearOffer shape
+- buyers-brief.js calls PropertyData with tier: 'paid' (replaces direct ZoneIQ call)
+- ClearOffer makes ZERO direct calls to BCC ArcGIS or ZoneIQ
 - Free Scout Report (target: under $0.15/lookup):
-  - Overlays: ZoneIQ (free) — flood, bushfire, heritage, character, noise, schools
-  - Suburb stats: Supabase static lookup (100 Brisbane suburbs) — cache table ready for PropTechData monthly population
+  - All overlays via PropertyData (free tier): flood, bushfire, heritage, character, noise, schools, koala, acid sulfate, biodiversity, road, HV, pipeline, waterway, wetlands
+  - Suburb stats: via PropertyData (static lookup, ~100 Brisbane suburbs)
   - AVM teaser: derived ±8% of suburb median
   - Verdict: Claude Haiku (~$0.02)
   - Listing data: PENDING Domain API approval
 - Paid Buyer's Brief ($149):
   - Generation: Claude Sonnet streaming (~$0.05–0.10)
-  - AVM + comparables + suburb stats: PropTechData STUBBED — pending terms confirmation
-  - All overlays explained in plain English: ZoneIQ + Claude
+  - All overlays + lot plan + ICSEA via PropertyData (paid tier)
+  - AVM + comparables: PropTechData STUBBED — pending terms confirmation
   - Offer recommendation + negotiation script: Claude
 - PropTechData constraint: NEVER called on free report. Paid report only.
 
@@ -131,7 +135,7 @@ Last updated: 10 April 2026 (Sprint 29 added — QLD land valuation)
 #### ClearOffer Env Vars (Vercel project: buyerside)
 - Development: BASE_URL=http://localhost:3001, ALLOWED_ORIGIN=http://localhost:3001, COMING_SOON=true
 - Production: BASE_URL=https://clearoffer.com.au, ALLOWED_ORIGIN=https://clearoffer.com.au, COMING_SOON=true (set false when ready to launch)
-- All environments: ANTHROPIC_API_KEY, STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_KEY, ZONEIQ_URL=https://zoneiq-sigma.vercel.app, RESEND_API_KEY, GOOGLE_GEOCODING_API_KEY
+- All environments: ANTHROPIC_API_KEY, STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_KEY, PROPERTYDATA_URL, PROPERTYDATA_SECRET, ZONEIQ_URL=https://zoneiq-sigma.vercel.app (legacy — PropertyData calls ZoneIQ internally), RESEND_API_KEY, GOOGLE_GEOCODING_API_KEY
 - Pending (blank until approved): DOMAIN_CLIENT_ID, DOMAIN_CLIENT_SECRET, PROPTECH_DATA_API_KEY, CRON_SECRET
 - Note: Google key needs Places API enabled on GCP project (not just Geocoding API) for autocomplete to work
 
@@ -152,6 +156,34 @@ Last updated: 10 April 2026 (Sprint 29 added — QLD land valuation)
 - Autocomplete: requires Places API enabled on GCP project. If not enabled, users can still type full address and press enter.
 - Verdict prompt: occasionally generates meta text instead of a sharp one-liner when no listing data available (Domain API not yet connected). Acceptable until Domain API approved.
 - COMING_SOON: currently set to true on all Vercel environments — set to false in Production when ready to launch.
+
+### PropertyData — internal data aggregation layer
+- Repo: stevenpicton1979/propertydata (master branch)
+- Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
+- Port: 3002 (local dev)
+- Auth: PROPERTYDATA_SECRET in Authorization header
+- Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
+- Status: LIVE (local) — Sprint 1+2 complete, ClearOffer switched over
+
+#### PropertyData Architecture
+- Single POST endpoint: /api/lookup { address, tier: "free"|"paid" }
+- Field registry: 55 fields defined (34 live, rest pivot/blocked)
+- 7 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, zoneiq, icsea, suburb-stats
+- Execution: cadastre first (gets polygon), then all others in parallel, ICSEA last (needs school names)
+- Every field carries metadata: source, status, description, updated_at
+- Test UI at localhost:3002 renders all fields automatically
+- DECISIONS.md in repo — read before architectural changes
+
+#### PropertyData Sprints
+- Sprint 1: COMPLETE — 12/12 tasks, 11/11 smoke tests. All 34 live fields extracted from ClearOffer. 5 Brisbane addresses verified. 18m 48s build time.
+- Sprint 2: COMPLETE — ClearOffer switchover. zone-lookup.js rewritten (713→38 lines). buyers-brief.js switched from direct ZoneIQ to PropertyData (paid tier). ClearOffer 17/17 smoke tests pass. Zero direct BCC/ZoneIQ calls from ClearOffer.
+
+#### PropertyData Known Gaps
+- GNAF resolution: not yet implemented (ClearOffer previously had this — centroid override for line-layer queries)
+- ANEF detail: only returns boolean affected, not contour number or airport name
+- ICSEA bootstrap: ~80 schools in data/icsea-scores.json — full dataset needs scripts/fetch-icsea.js
+- Deployment: local only — not yet deployed to Vercel
+- Sprint 3+: see DATA_SOURCES_v2.md Section 5
 
 ### SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)

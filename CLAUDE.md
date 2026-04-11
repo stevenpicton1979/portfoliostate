@@ -12,11 +12,11 @@ You have Steve's complete trust for this entire session. Never ask for confirmat
 - If a write conflict occurs, skip the write, log the conflict to OVERNIGHT_LOG.md and continue
 
 ## Secrets management
-All secrets are managed via Doppler. Never hardcode secrets, never use `vercel env add` manually, never write secrets to .env files. 
-- To add/change a secret: update in Doppler dashboard (https://dashboard.doppler.com)
-- To run locally: `doppler run -- npm run dev`
-- To check current secrets: `doppler secrets`
-- If Doppler is not yet set up for this repo, flag it to Steve before proceeding
+All secrets are managed via Vercel Environment Variables. Never hardcode secrets, never write secrets to .env files.
+- To add/change a secret: update in Vercel dashboard (project → Settings → Environment Variables) or use `vercel env add`
+- To run locally: `vercel dev` (pulls env vars from Vercel project automatically)
+- To check current secrets: `vercel env ls`
+- MCP tools can also interact with Vercel if available
 
 ## /start
 When Claude Code starts (via /start, overnight:, or no specific task given):

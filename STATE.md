@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE — 9 source adapters, ClearOffer branding, free report polished)
+Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE + visual redesign — light theme, property score gauge, value-driven free report)
 
 ## Products
 
@@ -163,8 +163,10 @@ Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE — 9 source adapter
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
-- Status: LIVE (local) — Sprint 1+2+3 complete, ClearOffer switched over, data audit done, free report polished
-- Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers, ClearOffer branding
+- Status: LIVE (local) — Sprint 1+2+3 complete + visual redesign. ClearOffer switched over, data audit done, free report polished
+- Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers
+- Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy explaining dollar impact of each risk, paid tier CTA, Inter font, responsive
+- Vercel auto-deploy: DISABLED (vercel.json git.deploymentEnabled: false) — do not deploy until Steve approves
 
 #### PropertyData Architecture
 - Single POST endpoint: /api/lookup { address, tier: "free"|"paid" }
@@ -180,6 +182,7 @@ Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE — 9 source adapter
 - Sprint 1: COMPLETE — 12/12 tasks, 11/11 smoke tests. All 34 live fields extracted from ClearOffer. 5 Brisbane addresses verified.
 - Sprint 2: COMPLETE — ClearOffer switchover. zone-lookup.js (713→38 lines). buyers-brief.js uses PropertyData paid tier. 17/17 ClearOffer smoke tests pass. Zero direct BCC/ZoneIQ calls.
 - Sprint 3: COMPLETE — 10/10 tasks. Landslide overlay, crime data, street view metadata, map proxy, ClearOffer branding, plain-English risk explanations, QA pass.
+- Visual Redesign: COMPLETE — Light theme, Property Score gauge, value callout ($300-800 lawyer comparison), 9 risk cards with cost-impact copy, section value statements, paid tier CTA, infrastructure tag fix (check boolean props not object truthiness), road type cleanup.
 
 #### PropertyData Data Audit (11 April 2026)
 - Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)

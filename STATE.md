@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE + visual redesign — light theme, property score gauge, value-driven free report)
+Last updated: 11 April 2026 (PropertyData Sprint 3.6 COMPLETE — free report alignment, ICSEA fix, Street View image, CI pipeline)
 
 ## Products
 
@@ -163,14 +163,15 @@ Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE + visual redesign �
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
-- Status: LIVE (local) — Sprint 1+2+3 complete + visual redesign. ClearOffer switched over, data audit done, free report polished
+- Status: LIVE (local) — Sprint 1+2+3+3.5+3.6 complete. ClearOffer switched over, data audit done, free report polished + aligned
 - Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers
-- Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy explaining dollar impact of each risk, paid tier CTA, Inter font, responsive
+- Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive
+- CI: GitHub Actions on push/PR to master (Node 18+20). 45 unit tests: field registry integrity, ICSEA adapter, suburb stats, renderer–registry key alignment
 - Vercel auto-deploy: DISABLED (vercel.json git.deploymentEnabled: false) — do not deploy until Steve approves
 
 #### PropertyData Architecture
 - Single POST endpoint: /api/lookup { address, tier: "free"|"paid" }
-- Field registry: 64 fields defined (~48 live, 8 pivot, 6 blocked)
+- Field registry: 56 fields defined (39 live, 11 pivot, 6 blocked)
 - 9 source adapters: bcc-cadastre, bcc-flood, bcc-overlays, bcc-infrastructure, zoneiq, icsea, suburb-stats, qps-crime, google-streetview
 - Execution: cadastre first (gets polygon), then all others in parallel, ICSEA last (needs school names)
 - Every field carries metadata: source, status, description, updated_at
@@ -182,7 +183,8 @@ Last updated: 11 April 2026 (PropertyData Sprint 3 COMPLETE + visual redesign �
 - Sprint 1: COMPLETE — 12/12 tasks, 11/11 smoke tests. All 34 live fields extracted from ClearOffer. 5 Brisbane addresses verified.
 - Sprint 2: COMPLETE — ClearOffer switchover. zone-lookup.js (713→38 lines). buyers-brief.js uses PropertyData paid tier. 17/17 ClearOffer smoke tests pass. Zero direct BCC/ZoneIQ calls.
 - Sprint 3: COMPLETE — 10/10 tasks. Landslide overlay, crime data, street view metadata, map proxy, ClearOffer branding, plain-English risk explanations, QA pass.
-- Visual Redesign: COMPLETE — Light theme, Property Score gauge, value callout ($300-800 lawyer comparison), 9 risk cards with cost-impact copy, section value statements, paid tier CTA, infrastructure tag fix (check boolean props not object truthiness), road type cleanup.
+- Sprint 3.5: COMPLETE — Light theme, Property Score gauge, value callout ($300-800 lawyer comparison), 9 risk cards with cost-impact copy, section value statements, paid tier CTA, infrastructure tag fix (check boolean props not object truthiness), road type cleanup.
+- Sprint 3.6: COMPLETE — 6/6 tasks. Fixed 7 field key mismatches (heritage, noise, overland flow, acid sulfate, biodiversity, school names). Fixed ICSEA object→number extraction. Street View image live (GCP API enabled). Suburb stats timestamp. 45 unit tests + GitHub Actions CI.
 
 #### PropertyData Data Audit (11 April 2026)
 - Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)

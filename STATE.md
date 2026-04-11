@@ -1,5 +1,5 @@
 # Steve Picton — PropTech Portfolio State
-Last updated: 11 April 2026 (PropertyData Sprint 3.6 COMPLETE — free report alignment, ICSEA fix, Street View image, CI pipeline)
+Last updated: 11 April 2026 (PropertyData Sprint 4 prep — accuracy testing, bushfire buffer fix, flood cascade fix, CI accuracy workflow, Sprint 5 AI insights scoped)
 
 ## Products
 
@@ -166,7 +166,7 @@ Last updated: 11 April 2026 (PropertyData Sprint 3.6 COMPLETE — free report al
 - Status: LIVE (local) — Sprint 1+2+3+3.5+3.6 complete. ClearOffer switched over, data audit done, free report polished + aligned
 - Dashboard: 3-tab test UI (Report Preview, Data Quality, Raw Fields) with satellite imagery, BCC flood/overlay layers
 - Free Report: light professional theme, Property Score 0-100 gauge (SVG ring combining 12+ risk factors), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive
-- CI: GitHub Actions on push/PR to master (Node 18+20). 45 unit tests: field registry integrity, ICSEA adapter, suburb stats, renderer–registry key alignment
+- CI: GitHub Actions on push/PR to master (Node 18+20). 45 unit tests: field registry integrity, ICSEA adapter, suburb stats, renderer–registry key alignment. PLUS accuracy test workflow (nightly + on push to api/sources/**) — 13 real Brisbane addresses, 49 pass / 0 fail / 15 warnings
 - Vercel auto-deploy: DISABLED (vercel.json git.deploymentEnabled: false) — do not deploy until Steve approves
 
 #### PropertyData Architecture
@@ -185,6 +185,7 @@ Last updated: 11 April 2026 (PropertyData Sprint 3.6 COMPLETE — free report al
 - Sprint 3: COMPLETE — 10/10 tasks. Landslide overlay, crime data, street view metadata, map proxy, ClearOffer branding, plain-English risk explanations, QA pass.
 - Sprint 3.5: COMPLETE — Light theme, Property Score gauge, value callout ($300-800 lawyer comparison), 9 risk cards with cost-impact copy, section value statements, paid tier CTA, infrastructure tag fix (check boolean props not object truthiness), road type cleanup.
 - Sprint 3.6: COMPLETE — 6/6 tasks. Fixed 7 field key mismatches (heritage, noise, overland flow, acid sulfate, biodiversity, school names). Fixed ICSEA object→number extraction. Street View image live (GCP API enabled). Suburb stats timestamp. 45 unit tests + GitHub Actions CI.
+- Sprint 3.7 (Accuracy Testing): IN PROGRESS — 13-address accuracy test suite (49P/0F/15W). Bushfire buffer vs direct hazard regex fix (buffer=amber, direct=red). Flood badge cascade fix (creek→river→overland→AEP). Chapel Hill landslide test case added. CI accuracy workflow (.github/workflows/accuracy.yml) with GitHub secrets. Diagnostic scripts: check-carindale-character.js, find-landslide-address.js.
 
 #### PropertyData Data Audit (11 April 2026)
 - Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)
@@ -200,6 +201,9 @@ Last updated: 11 April 2026 (PropertyData Sprint 3.6 COMPLETE — free report al
 - Deployment: local only — not yet deployed to Vercel
 - Suburb stats: STATIC TABLE — drifts monthly. Must replace with live API (PropTrack/CoreLogic) before any public launch
 - Blocked on external APIs: PropTechData (AVM), Domain (listing), InfoTrack (title)
+- Bushfire badge label: FIXED — buffer categories now show "Buffer zone" in detail text, score factor label, and synthesis paragraph
+- RAPIDAPI_PROXY_SECRET: not in propertydata .env.local — accuracy tests work without it (ZoneIQ only needs it for external callers)
+- Bardon landslide: soft assertion only — BCC overlay has 7 polygons, none on residential lots. May never pass as hard assert.
 
 ### SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)

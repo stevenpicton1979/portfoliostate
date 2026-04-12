@@ -1,3 +1,5 @@
+# DEPRECATED — do not edit. See STATE_[PRODUCT].md files.
+
 # Steve Picton — PropTech Portfolio State
 Last updated: 12 April 2026 (PropertyData Sprint 4.2.2 complete — enhanced flood data with 10 layers, risk classification, plain-English summary)
 

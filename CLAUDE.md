@@ -4,12 +4,44 @@ You have Steve's complete trust for this entire session. Never ask for confirmat
 
 # portfoliostate — Claude Code config
 
-## STATE.md write rule
-- Always run git -C C:/dev/portfoliostate pull origin main immediately before reading STATE.md
-- Always run git -C C:/dev/portfoliostate pull origin main immediately before writing STATE.md
-- If STATE.md has been modified since you last read it, re-read it before writing
-- Never overwrite STATE.md without pulling first
-- If a write conflict occurs, skip the write, log the conflict to OVERNIGHT_LOG.md and continue
+## State management — mandatory protocol
+
+STATE.md is deprecated. Do not read or write it.
+
+Per-product state files:
+- PropertyData  → STATE_PROPERTYDATA.md
+- ZoneIQ        → STATE_ZONEIQ.md
+- ClearOffer    → STATE_CLEAROFFER.md
+- WhatCanIBuild → STATE_WHATCANIBUILD.md
+- Portfolio     → STATE_PORTFOLIO.md (human-written only, do not write)
+
+Before reading ANY state file:
+  git -C C:\dev\portfoliostate fetch origin
+  git -C C:\dev\portfoliostate reset --hard origin/main
+
+This is mandatory. Never skip it. It takes 2 seconds and prevents acting on stale state.
+
+When writing state at session end:
+  cd C:\dev\portfoliostate
+  git add STATE_[PRODUCT].md
+  git commit -m "state: [product] session update [date]"
+  git push
+
+Only write to your own product's state file. Never touch another product's file.
+
+## Cross-product dependency
+
+PropertyData and ClearOffer have a live data dependency. See STATE_PROPERTYDATA.md
+and STATE_CLEAROFFER.md for the contract and guardrails. Any agent working on either
+product must read the dependency section of their state file before making changes
+to APIs, response shapes, or field definitions.
+
+## Log rotation
+
+If OVERNIGHT_LOG.md exceeds 500 lines, before appending:
+  - Rename OVERNIGHT_LOG.md to OVERNIGHT_LOG_YYYY_MM.md
+  - Create a fresh empty OVERNIGHT_LOG.md
+  - Then append the current session entry
 
 ## Secrets management
 All secrets are managed via Vercel Environment Variables. Never hardcode secrets, never write secrets to .env files.

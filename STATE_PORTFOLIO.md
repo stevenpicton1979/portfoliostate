@@ -74,6 +74,19 @@
 - Purpose: meta-repo for cross-product docs only — no product code
 - Contains: STATE.md (deprecated), STATE_PROPERTYDATA.md, STATE_ZONEIQ.md, STATE_CLEAROFFER.md, STATE_WHATCANIBUILD.md, STATE_PORTFOLIO.md, SUBDIVIDEIQ.md, SUBDIVIDEIQ_BACKLOG.md, SUBDIVIDEIQ_DATA_SOURCES.md
 
-## How to start a new Claude chat with full context
-Open new chat at claude.ai and paste:
-"Read my current project state from GitHub before we start: https://raw.githubusercontent.com/stevenpicton1979/portfoliostate/main/STATE.md — I'm Steve, building a PropTech portfolio with Claude Code. Once you've read it confirm you're up to speed."
+## How to start a new session with full context
+
+**Single product session** (e.g. PropertyData work):
+Open a new chat, select C:\dev\portfoliostate, and say:
+"Read STATE_PROPERTYDATA.md before we start. I'm Steve, building a PropTech portfolio."
+
+Replace the filename with whichever product you're working on:
+- PropertyData  → STATE_PROPERTYDATA.md
+- ZoneIQ        → STATE_ZONEIQ.md
+- ClearOffer    → STATE_CLEAROFFER.md
+- WhatCanIBuild → STATE_WHATCANIBUILD.md
+
+**Cross-product session** (e.g. infra, state management, portfolio-level planning):
+"Read STATE_PORTFOLIO.md and all STATE_*.md files in this folder. I'm Steve, building a PropTech portfolio."
+
+**Claude Code overnight sessions** read CLAUDE.md in each repo automatically — no paste needed.

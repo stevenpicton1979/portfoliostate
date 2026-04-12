@@ -13,6 +13,7 @@ Per-product state files:
 - ZoneIQ        → STATE_ZONEIQ.md
 - ClearOffer    → STATE_CLEAROFFER.md
 - WhatCanIBuild → STATE_WHATCANIBUILD.md
+- NoteReady     → STATE_NOTEREADY.md
 - Portfolio     → STATE_PORTFOLIO.md (human-written only, do not write)
 
 Before reading ANY state file:

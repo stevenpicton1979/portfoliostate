@@ -1,5 +1,13 @@
 # Portfolio — cross-product summary
 
+## NoteReady — pre-launch
+- Repo: stevenpicton1979/noteready (to be created)
+- Domain: noteready.com.au (to be purchased)
+- Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js + Supabase (new project)
+- Status: IN DESIGN — product brief and backlog in portfoliostate repo
+- See: NOTEREADY.md, NOTEREADY_BACKLOG.md
+- Note: First non-PropTech product — NDIS progress note writer
+
 ## SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)
 - Domain: TBD — will buy at launch
@@ -72,7 +80,7 @@
 ## Portfolio state repo
 - Repo: stevenpicton1979/portfoliostate
 - Purpose: meta-repo for cross-product docs only — no product code
-- Contains: STATE.md (deprecated), STATE_PROPERTYDATA.md, STATE_ZONEIQ.md, STATE_CLEAROFFER.md, STATE_WHATCANIBUILD.md, STATE_PORTFOLIO.md, SUBDIVIDEIQ.md, SUBDIVIDEIQ_BACKLOG.md, SUBDIVIDEIQ_DATA_SOURCES.md
+- Contains: STATE.md (deprecated), STATE_PROPERTYDATA.md, STATE_ZONEIQ.md, STATE_CLEAROFFER.md, STATE_WHATCANIBUILD.md, STATE_PORTFOLIO.md, SUBDIVIDEIQ.md, SUBDIVIDEIQ_BACKLOG.md, SUBDIVIDEIQ_DATA_SOURCES.md, NOTEREADY.md, NOTEREADY_BACKLOG.md
 
 ## How to start a new session with full context
 

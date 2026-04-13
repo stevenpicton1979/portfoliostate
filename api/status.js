@@ -1,8 +1,9 @@
 const PRODUCTS = [
+  { name: 'PropertyVitals', url: 'https://www.propertyvitals.com.au' },
   { name: 'WhatCanIBuild', url: 'https://whatcanibuild.com.au' },
-  { name: 'ZoneIQ', url: 'https://zoneiq.com.au' },
   { name: 'ClearOffer', url: 'https://clearoffer.com.au' },
-  { name: 'SubdivideIQ', url: 'https://subdivide.whatcanibuild.com.au' },
+  // ZoneIQ removed — deprecated
+  // SubdivideIQ removed — parked
 ];
 
 async function checkProduct(product) {

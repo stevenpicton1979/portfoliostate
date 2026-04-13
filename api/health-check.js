@@ -1,14 +1,15 @@
 /**
- * Vercel cron job — runs every 30 minutes.
- * Checks all products, posts Slack alerts on state transitions.
+ * Vercel cron job — runs hourly.
+ * Checks all active products, posts Slack alerts on state transitions.
  * State is tracked via @vercel/kv (optional — gracefully degrades if not configured).
  */
 
 const PRODUCTS = [
+  { name: 'PropertyVitals', url: 'https://www.propertyvitals.com.au' },
   { name: 'WhatCanIBuild', url: 'https://whatcanibuild.com.au' },
-  { name: 'ZoneIQ', url: 'https://zoneiq.com.au' },
   { name: 'ClearOffer', url: 'https://clearoffer.com.au' },
-  { name: 'SubdivideIQ', url: 'https://subdivide.whatcanibuild.com.au' },
+  // ZoneIQ removed — deprecated, absorbed into PropertyData
+  // SubdivideIQ removed — parked
 ];
 
 const SLACK_CHANNEL = '#claude-alerts';

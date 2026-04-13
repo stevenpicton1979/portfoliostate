@@ -83,3 +83,22 @@ Session: 2026-04-06
 - Re-verified live deployment: all 4 products green (WhatCanIBuild 53ms, ZoneIQ 58ms, ClearOffer 68ms, SubdivideIQ 27ms)
 - Deployment protection disabled on portfoliostate-status Vercel project (was blocking public access to preview URLs)
 - status.whatcanibuild.com.au still pending DNS — requires manual A/CNAME record at nameserver.net.au
+
+---
+
+## PropertyData — Evening + Overnight Queue — 2026-04-14
+
+### Evening session completed (commits pushed by Steve)
+- **Score box contrast fix** — CoreLogic theme score box redesigned: white background + 2px blue border, score number forced to var(--accent) blue via `!important`. Eliminates green/amber/red text-on-blue contrast issue (inline style was overriding CSS). Commit: 71413b8
+- **Style toggle removed** — `<body class="theme-corelogic">` is now permanent. Removed: `.style-switcher` CSS + HTML, `setTheme()` JS function, localStorage preference restore, style-pill classes. CoreLogic is the one true theme.
+- **Permalink bar removed** — share bar injected into UI after report generation removed (was cluttering search wrap). SSR `/report/:slug` pages and Supabase report storage still fully functional — links work, just not shown inline.
+- **Landing page revamp** — added `.landing-hero` section above search wrap with: eyebrow chip ("Brisbane Properties · Free Report"), H1 "Know exactly what you're buying.", supporting subtext ("No agent spin, no sign-up"). Brand bar simplified (tagline removed, just logo + name). Trust row added inside search wrap below button: 4 chips — "12+ government sources", "Free in under 15 seconds", "No sign-up required", "Brisbane properties". Hero auto-hides via `body.has-report` class added on report load.
+
+### Overnight build queued — start with "overnight: work through backlog" or "overnight: propertydata"
+Tasks in priority order:
+1. **T2.6** — sitemap.xml + robots.txt (static, quick — /api/sitemap.js or static public/ file)
+2. **T2.9** — PDF update: add permanent report URL to PDF header/footer; add PropertyVitals branding + www.propertyvitals.com.au
+3. **T2.8** — contextual referral CTAs: flood flagged → flood insurance, heritage → heritage architect, high score → conveyancer, any overlays → building inspector. Render below report sections. Track clicks via Plausible.
+4. **T2.3** — dynamic OG image per report: use @vercel/og or satori to generate 1200×630 image showing address, Property Score number, 3 key overlay flags. Cache in Supabase storage.
+5. **T2.5** — 101 suburb landing pages at /suburb/{name}: each shows suburb overlay prevalence stats, demographics, momentum, school catchments, market data, CTA to generate free report. Static HTML from suburb-overlay-stats.json + abs-suburb-stats.json.
+6. **T3.1** — local plan + precinct: query BCC CityPlan Local Plan layer (FeatureServer) for lot centroid. New fields: local_plan_name, local_plan_precinct. Render in Property Overview section alongside zone code.

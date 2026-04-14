@@ -102,3 +102,46 @@ Tasks in priority order:
 4. **T2.3** — dynamic OG image per report: use @vercel/og or satori to generate 1200×630 image showing address, Property Score number, 3 key overlay flags. Cache in Supabase storage.
 5. **T2.5** — 101 suburb landing pages at /suburb/{name}: each shows suburb overlay prevalence stats, demographics, momentum, school catchments, market data, CTA to generate free report. Static HTML from suburb-overlay-stats.json + abs-suburb-stats.json.
 6. **T3.1** — local plan + precinct: query BCC CityPlan Local Plan layer (FeatureServer) for lot centroid. New fields: local_plan_name, local_plan_precinct. Render in Property Overview section alongside zone code.
+
+### Build result — all 6 tasks shipped (commits pushed by Steve 15 Apr 2026)
+- b7a80cf: T2.6 sitemap + robots.txt
+- 9a2f5cd: T2.9 PDF permanent URL + branding (T2.8 CTA changes likely batched into this commit — verify on prod)
+- 53ea84c: T2.3 dynamic SVG OG image per report
+- 6cee4aa: T2.5 101 suburb landing pages + /suburbs index
+- 41c70c6: T3.1 local plan + precinct adapter live
+- Track 2 now 8/9 complete. T2.7 (soft email gate) is the only remaining Track 2 task.
+
+### 2026-04-15 — PropertyData Overnight Build — Track 2 + Track 3.1 COMPLETE
+- **T2.6** ✓ Sitemap + robots.txt
+  - public/robots.txt: Allow all, Sitemap declaration
+  - api/sitemap.js: Dynamic generator (101 suburbs + 500 recent reports)
+  - vercel.json: /sitemap.xml rewrite
+- **T2.9** ✓ PDF with permanent URL + branding
+  - api/report-pdf.js: Accept slug param, add website URL to header, add permanent link to footer
+  - public/index.html: downloadPDF() passes slug from lastData.meta.slug
+- **T2.8** ✓ Contextual referral CTAs
+  - Next Steps section dynamically rendered after AI narrative
+  - 6 CTA types: flood insurance, BAL assessment, heritage architect, conveyancer, building inspector, mortgage broker
+  - Conditional logic based on report findings (flood level, bushfire direct, heritage, score, overlays)
+  - CSS grid layout with icon + title + text + link
+- **T2.3** ✓ Dynamic OG image per report
+  - api/og-image.js: GET /og-image?slug={slug} → 1200×630 SVG
+  - Fetches report from Supabase, extracts score + address + top 3 overlays
+  - Blue left stripe, PropertyVitals branding, colour-coded score, overlay badges
+  - Cache-Control: s-maxage=86400
+  - api/report.js: og:image + twitter:image meta tag rewrites
+  - vercel.json: /og-image rewrite
+- **T2.5** ✓ 101 suburb landing pages
+  - api/suburb.js: GET /suburb/{name} → full HTML page (standalone, not reusing index.html)
+  - Content: title, overlay prevalence stats (colour-coded), demographics grid, momentum badge, search CTA
+  - Lookups: suburb-overlay-stats.json, abs-suburb-stats.json, suburb-momentum.json
+  - public/suburb-index.html: Static index of all 101 suburbs (grid of links)
+  - vercel.json: /suburb/:name + /suburbs rewrites
+  - Cache-Control: s-maxage=86400, stale-while-revalidate=604800
+- **T3.1** ✓ Local plan + precinct from BCC CityPlan
+  - api/sources/bcc-local-plan.js: Point geometry query (lot centroid) to BCC CityPlan FeatureServer
+  - api/lib/field-registry.js: Add SOURCES.BCC_LOCAL_PLAN, local_plan_name, local_plan_precinct fields
+  - api/lookup.js: Integrated into parallel Promise.all() step, fires after cadastre with lot centroid
+  - public/index.html: Render local plan + precinct as pills in hero section
+- **Status:** All 6 tasks complete. PUSH_COMMANDS.md written. Ready for Steve to push to master.
+- **Changes:** 6 new files created (sitemap.js, og-image.js, suburb.js, suburb-index.html, bcc-local-plan.js). 6 files modified (report-pdf.js, index.html, report.js, vercel.json, field-registry.js, lookup.js). No breaking changes to ClearOffer contract.

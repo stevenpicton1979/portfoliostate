@@ -145,3 +145,21 @@ Tasks in priority order:
   - public/index.html: Render local plan + precinct as pills in hero section
 - **Status:** All 6 tasks complete. PUSH_COMMANDS.md written. Ready for Steve to push to master.
 - **Changes:** 6 new files created (sitemap.js, og-image.js, suburb.js, suburb-index.html, bcc-local-plan.js). 6 files modified (report-pdf.js, index.html, report.js, vercel.json, field-registry.js, lookup.js). No breaking changes to ClearOffer contract.
+
+---
+## Session — 14 Apr 2026 (evening continuation)
+
+**Commits pushed:** 0c4e7f6, 25077d8, bbe2583
+
+**Work completed:**
+- Fixed critical index.html corruption (truncated at line 1736 in prior session — autocomplete stripped). Restored from 9a2f5cd, applied surgical edits, fixed duplicate tail appended by bash/Windows mount discrepancy.
+- Hazard/overlay tier split: 9 checks now classified as Hazards (orange, drive Preparation Level) vs Planning Overlays (amber, appear in count row only). Prep Level driven by hazard count: 0=Light, 1=Moderate, 2-3=Significant, 4+=In-depth.
+- Layout Option B: top row (summary panel | address/pills), full-width 3-column grid below. Eliminates whitespace gap.
+- Dynamic description copy: specific/transparent ("Mostly standard planning overlays with N hazards to investigate").
+- Suburb normaliser: pulls ctxMap context note for most relevant flagged overlay.
+- Messaging Framework docx updated: section 2.1 thresholds, new section 2.2 Description Copy Framework, section 3 hazard/overlay classification note.
+
+**Remaining / next overnight:**
+- T2.7: Soft email gate
+- CS.1-CS.8: Continuity safeguards (schema fixtures, smoke tests, DECISIONS.md D8, Brisbane validation test)
+

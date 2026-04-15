@@ -1,7 +1,7 @@
 # PropertyData — internal data aggregation layer
 - Repo: stevenpicton1979/propertydata (master branch)
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
-- Last known good commit: e22e62f (15 Apr 2026 — T3.2-T3.8 + CS.6 overnight build)
+- Last known good commit: 07515c3 (15 Apr 2026 — T3.15+T3.16+T3.20+T3.22+T2.7 medium build)
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
 - Git workflow: Claude NEVER runs git add/commit/push — the sandbox mount creates index.lock conflicts that block Steve's terminal. Claude edits files, then tells Steve which files to stage and provides the commit message. Steve runs all git commands from his Windows terminal. Read-only git commands (status, log, diff, show) are OK from the sandbox.

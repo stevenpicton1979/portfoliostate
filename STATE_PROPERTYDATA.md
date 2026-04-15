@@ -1,8 +1,10 @@
 # PropertyData — internal data aggregation layer
 - Repo: stevenpicton1979/propertydata (master branch)
 - Stack: Vanilla HTML/CSS/JS + Vercel serverless Node.js
+- Last known good commit: 29b98f0 (15 Apr 2026 — CI fix: mock Supabase env vars in route-smoke tests)
 - Port: 3002 (local dev)
 - Auth: PROPERTYDATA_SECRET in Authorization header
+- Git workflow: Claude NEVER runs git add/commit/push — the sandbox mount creates index.lock conflicts that block Steve's terminal. Claude edits files, then tells Steve which files to stage and provides the commit message. Steve runs all git commands from his Windows terminal. Read-only git commands (status, log, diff, show) are OK from the sandbox.
 - Supabase: shares fzykfxesznyiigoyeyed with ZoneIQ (Decision D2)
 - Status: LIVE (deployed to Vercel + production domain) — Sprint 1+2+3+3.5+3.6+3.7+3.8+3.9+4.1+4.2+4.2.2+4.2.3+4.8+4.9+5.0 complete. Track 1 mostly done (T1.3 blocked on live suburb stats API). Track 2 started: T2.1+T2.2+T2.4 complete. Evening session 14 Apr 2026: CoreLogic theme locked as permanent default (toggle removed), landing page revamped (hero headline + trust row), score box contrast fixed (white bg + blue border in CoreLogic theme), permalink bar removed from UI.
 - Backlog restructured (13 April 2026): 7 independent tracks. Track 1 (Free Report Launch) → Track 2 (Growth Layer / SEO) → Track 3 (Data Completeness from PropCheck gap analysis) → Track 4 (Planning Intelligence paid tier $39-49) → Track 5 (Lead Gen) → Track 6 (B2B API) → Track 7 (Property Buyer Report — PARKED, blocked on VG licensing).
@@ -19,7 +21,7 @@
 - Dashboard: 2-tab public UI (Report, Methodology) + 2 dev-only tabs (Data Quality, Raw Fields — visible via ?dev=1). Satellite imagery, BCC flood/overlay layers. Download PDF button in tabs bar.
 - Free Report: PropertyVitals branding with SVG house+heartbeat logo icon. Light professional theme, Property Score 0-100 gauge (SVG ring + shared module api/lib/property-score.js), value-driven copy, Street View image, ICSEA scores on school cards, suburb stats timestamp, paid tier CTA, Inter font, responsive. Flood section leads with colour-coded risk headline. Australian language + planning framing throughout. All "Buyer's Brief" references removed. Tier selector hidden (dev-only). Button: "Generate Report".
 - PDF: POST /api/report-pdf — A4 PDF via pdfkit with all 13 sections. Same-origin Referer auth bypass. "Download PDF Report" button in UI. Score Rocklea=67 (flood-heavy), Ascot=93 (clean), Carindale=75 (medium). Fixed: creek risk [object Object], road type "quiet_street", income label /wk, null field omission, flood summary text overlap, PropertyVitals branding throughout.
-- CI: GitHub Actions on push/PR to master. 9 test files now: adapter contracts (41), golden response schema (20), field registry (13), ICSEA (13), renderer alignment (5), suburb stats (14), golden snapshots (158), property score (82), cross-field consistency (406). Total: 752 passing, 0 failing, 14 soft warnings. Adapter coverage: 16/16. Accuracy test: 30 addresses (up from 13).
+- CI: GitHub Actions on push/PR to master. 11 test files now: adapter contracts (41), golden response schema (20), field registry (13), ICSEA (13), renderer alignment (5), suburb stats (14), golden snapshots (158), property score (82), cross-field consistency (406), route smoke (16), brisbane-only (6). Total: 774+ passing. Adapter coverage: 17/17 (added bcc-local-plan). Accuracy test: 30 addresses.
 - Vercel: DEPLOYED to production (propertydata.vercel.app) — env vars set: PROPERTYDATA_SECRET, SUPABASE_URL, SUPABASE_SERVICE_KEY, ANTHROPIC_API_KEY, GOOGLE_GEOCODING_API_KEY. RAPIDAPI_PROXY_SECRET not set (not in .env.local — not needed for core flow).
 
 ## PropertyData Architecture
@@ -50,40 +52,4 @@
 - Sprint 4.8 (PDF Report Generation): COMPLETE — api/lib/property-score.js extracted as shared CommonJS module. api/report-pdf.js: POST /api/report-pdf → A4 PDF (pdfkit) with 13 sections: header, Property Score with factors, property overview, flood risk, bushfire, landslide, heritage/character, environmental overlays, infrastructure, school catchments, crime, suburb profile, AI insights, data sources, disclaimer. "Download PDF Report" button in UI (shown post-lookup, triggers browser download). vercel.json rewrite added. pdfkit added to dependencies. PDFs validated for Rocklea (67, flood-heavy), Ascot (93, clean), Carindale (75, medium).
 - Sprint 4.9 (Pre-Launch Test Confidence): COMPLETE — 4 new test layers, all CI-safe ($0, <1s each): (1) 15 golden snapshot fixtures (tests/golden/*.json) + tests/golden-snapshots.test.js (158 tests); (2) tests/property-score.test.js (82 tests — determinism + exact synthetic scores); (3) tests/cross-field-consistency.test.js (406 tests — 25 rules × 15 fixtures); (4) accuracy-test.js expanded from 13 to 30 addresses. Total CI: 9 test files, 752 tests, 0 failures, 14 soft warnings. Accuracy matrix: 30 addresses covering all overlay profiles.
 
-- Sprint 5.0 (Production Launch Polish — 13 April 2026): COMPLETE — (1) PropertyVitals branding: SVG house+heartbeat logo icon, all "Buyer's Brief" → "PropertyVitals Planning Report", all "due diligence" → "investigation"/"research". (2) UI cleanup: dev-only tabs (Data Quality, Raw Fields) hidden behind ?dev=1 param, tier selector hidden, PDF button moved into tabs bar, empty state padding tightened. (3) PDF fixes: creek risk [object Object] → proper label extraction, road type "quiet_street" → "Local Road" formatting, income "p.a." → "/wk", null fields omitted instead of showing dashes, flood summary text overlap fixed (rowY/doc.y desync). (4) Production deployment promoted to www.propertyvitals.com.au via Vercel dashboard. All changes verified on production — web report and PDF both working correctly.
-
-- Evening Build 14 April 2026 (automated): COMMITTED, PUSH NEEDED — (1) T1.7: OG image (public/og-image.png, 1200x630) + og:image/twitter:image tags in index.html. (2) T2.1: api/lib/report-store.js — Supabase REST-based report persistence; generateSlug/saveReport/getReport/incrementViewCount; supabase/migrations/001_reports_table.sql (RUN MANUALLY in Supabase dashboard); meta.slug now in every API response. (3) T2.2+T2.4: api/report.js — SSR /report/:slug* handler; fetches from Supabase, injects window.__REPORT_DATA__, per-report OG meta tags, CDN cache s-maxage=3600; share permalink + copy-link button in UI. vercel.json: /report/:path* rewrite added. Tests: 752/752 passing.
-
-## PropertyData Data Audit (11 April 2026)
-- Full audit in PropertyData_Audit.xlsx (5 sheets: Field Inventory, Gap Analysis, Accuracy Assessment, Product Completeness, Roadmap)
-- Accuracy: 6/7 sources rated High or Very High (all BCC data authoritative). suburb-stats is STATIC — critical credibility risk.
-- Product completeness: ~72% of a complete buyer report. Property identity, zoning, flood, overlays, infrastructure, schools, noise all 100%. Crime, demographics, amenities now live (Sprint 3.5 + 3.9). Valuation, listing, title still 0% (blocked on external APIs).
-- Free report launch blockers (Sprint 3 resolved): suburb stats %, road hierarchy display, plain-English, crime, street view, landslide, map proxy, branding. Remaining: Vercel deploy, live suburb stats API
-- See Gap Analysis sheet for full P0–P3 prioritisation
-
-## PropertyData Known Gaps
-- GNAF resolution: not yet implemented (centroid override for line-layer queries)
-- ANEF detail: only returns boolean affected, not contour number or airport name
-- ICSEA bootstrap: ~80 schools in data/icsea-scores.json — full dataset needs scripts/fetch-icsea.js
-- Deployment: local only — not yet deployed to Vercel
-- Suburb stats: STATIC TABLE — drifts monthly. Must replace with live API (PropTrack/CoreLogic) before any public launch
-- Blocked on external APIs: PropTechData (AVM), Domain (listing), InfoTrack (title)
-- Bushfire badge label: FIXED — buffer categories now show "Buffer zone" in detail text, score factor label, and synthesis paragraph
-- RAPIDAPI_PROXY_SECRET: not in propertydata .env.local — accuracy tests work without it (ZoneIQ only needs it for external callers)
-- Bardon landslide: soft assertion only — BCC overlay has 7 polygons, none on residential lots. May never pass as hard assert.
-
-## Downstream dependency: ClearOffer
-
-```
-DEPENDENCY FINDING:
-Mechanism: HTTP POST to PropertyData /api/lookup endpoint (PROPERTYDATA_URL env var, default localhost:3002). Auth via Bearer token (PROPERTYDATA_SECRET). Single bridge module: buyerside/api/lib/propertydata-client.js
-ClearOffer consumes: POST /api/lookup { address, tier: "free"|"paid" } → flat fields array. Fields used: zone_code, zone_name, flood_creek_fpa, flood_river_fpa, flood_overland_flow, flood_aep_1pct, flood_2011, flood_2022, school_primary, school_secondary, school_primary_icsea, school_secondary_icsea, bushfire_hazard, heritage_listing, character_overlay, koala_habitat, acid_sulfate, biodiversity, waterway_corridor, wetlands, petroleum_pipeline, road_hierarchy, hv_powerline, hv_easement, aircraft_noise_anef, lot_plan, lot_area, derived_road_type
-Contract document: C:\dev\propertydata\DATA_SOURCES_v2.md (Section 4: Architecture, response shape definition)
-Risk — PropertyData changing ClearOffer: Renaming any field key (e.g. flood_creek_fpa → flood_creek), changing value types (e.g. boolean → object for flood_overland_flow), removing fields, or changing the fields array structure would silently break ClearOffer's propertydata-client.js mapping
-Risk — ClearOffer assuming wrong shape: ClearOffer hardcodes field key names and value types in propertydata-client.js. If PropertyData adds new flood fields (as in Sprint 4.2.2) but ClearOffer's mapping isn't updated, the new data is silently dropped. ClearOffer also assumes council is always null and state is always QLD.
-```
-
-### Guardrails for PropertyData agents
-- Before changing any response shape, field name, or removing a field, check STATE_CLEAROFFER.md
-- If a change would break the contract snapshot above, log it as a breaking change in OVERNIGHT_LOG.md and do not proceed without human review
-- Treat DATA_SOURCES_v2.md as a shared contract — do not modify field definitions without noting the ClearOffer impact
+- Sprint 5.0 (Production Launch Polish — 13 April 2026): COMPLETE — (1) PropertyVitals branding: SVG house+heartbeat logo icon, all "Buyer's Brief" → "PropertyVitals Planning Report", all "due diligence" → "investigation"/"research". (2) UI cleanup: dev-only tabs (Data Quality, Raw Fields) hidden behind ?dev=1 param, tier selector hidden, PDF button moved into tabs bar, empty state padding tightened. (3) PDF fixes: creek risk

@@ -49,11 +49,9 @@ TRANSFER TO/FROM, FAST TRANSFER, WDL ATM, MYCARD CREDIT, CITIBANK CREDIT, TAX OF
 - SUPABASE_SERVICE_ROLE_KEY
 - ANTHROPIC_API_KEY (enables LLM categorisation; without it falls back to keywords)
 
-## Known Issues / Git State (April 2026)
-- Local git repo is behind GitHub (GitKraken index.lock prevents sandbox git pulls). Use GitHub web editor for commits, or `git fetch origin && git reset --hard origin/main` from a Windows terminal to sync locally.
-- The `.git/config` and `.git/HEAD` files had null byte corruption in a previous session; both were rewritten cleanly.
-
 ## Recent Commit History
+- latest: "feat: inline category editing in spending drilldown" — Adds CATEGORIES constant, SaveStatus type, handleCategoryChange function, and inline <select> dropdown in /spending drilldown panel. Category changes persist to merchant_mappings and refresh charts immediately.
+- 312ec63b: "fix: categorisation pipeline - null-category filter, conditional upsert payload, LLM keyword hints" — Three critical fixes: (1) llmCategory.ts restored from truncation + keyword hints section added to prompt; (2) import/route.ts filter changed from any-mapping to category-not-null so migrated merchants with null category correctly receive LLM categorisation; (3) mappings/route.ts conditional payload so category updates don't clobber existing classification/notes.
 - 0872ef6: "fix: force-dynamic on subscriptions GET route to prevent stale caching" — READY on Vercel. Fixes persistence bug where Recurring page changes were lost on navigation.
 - 85be950: "fix: force-dynamic on uncategorized + subscriptions GET routes to fix caching bug" — superseded by 0872ef6 (subscriptions route was truncated in 85be950)
 - e88ed86: "Refactor merchant mapping logic in import route" — user mappings take full priority; LLM only runs for merchants with zero existing mapping (any account, any status). READY on Vercel.
@@ -79,6 +77,17 @@ All post-wizard screens verified working against live production data:
 - /subscriptions (Recurring): 23+ auto-detected items (HCFHEALTH, NETFLIX, OPENAI, FITBOX, QLD URBAN UTIL, etc.)
 - /mappings: 193 rules, searchable, Edit/Delete per row, transaction count column
 
+## Bug Fix: Categorisation Pipeline (April 2026)
+Three issues fixed in commit 312ec63b:
+1. **llmCategory.ts truncation** — file was corrupted (ended at line 63 mid-function). Restored to full 88 lines. Added keyword hints section to the LLM prompt to improve accuracy for Australian merchants (Insurance, Mortgage, Business, Entertainment, Eating Out, Transport, Food & Groceries).
+2. **Null-category filter bug in import/route.ts** — merchants migrated from finance_tags.json had existing `merchant_mappings` rows but with `null` category. Old code excluded ALL merchants with any mapping from LLM categorisation; fixed to exclude only merchants where `category IS NOT NULL`. Also changed `ignoreDuplicates: false` so LLM categories can upsert into null-category rows.
+3. **Conditional payload in mappings/route.ts** — POST route was always including `classification` and `notes` in the upsert payload, overwriting existing values with null when only updating category. Fixed to only include those fields if explicitly provided in the request body.
+
+## Known Issues / Git State (April 2026)
+- Local git repo is behind GitHub (GitKraken index.lock prevents sandbox git pulls). Use GitHub web editor (github.dev) for commits, or `git fetch origin && git reset --hard origin/main` from a Windows terminal to sync locally. Both finance-tracker and portfoliostate repos are affected.
+- The `.git/config` and `.git/HEAD` files had null byte corruption in a previous session; both were rewritten cleanly.
+
 ## Pending / Future Work
 - Basiq integration: will replace the manual merchant mapping step at import time (no action needed yet)
 - 8 Smart Awards merchants still uncategorised — appear in Transactions Review queue
+- Spending page `/api/spending` route: verify it returns `account_id` in transaction records (needed for inline category editing key generation)

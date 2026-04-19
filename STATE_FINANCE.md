@@ -34,8 +34,6 @@ Replaces the old Python/Excel finance workflow. Reads CBA bank CSV exports, clea
 ## Auto-Categorisation
 At import time: new merchants sent to `claude-haiku-4-5-20251001` in one batch call → ~96% hit rate in testing (193/201 merchants). Falls back to 20+ keyword rules. Categories saved to merchant_mappings with `confirmed=false`; user confirms in /transactions Review tab or wizard Step 3.
 
-User mappings always take priority: any merchant with an existing mapping (any account, any status) is skipped for LLM. LLM only runs for merchants with zero existing mapping.
-
 ## Excluded Transaction Patterns (not imported)
 TRANSFER TO/FROM, FAST TRANSFER, WDL ATM, MYCARD CREDIT, CITIBANK CREDIT, TAX OFFICE, BCC RATES, OVERDRAW FEE, DEBIT EXCESS, RETURN NO ACCOUNT, PAYMENT RECEIVED, DISPUTE ADJUSTMENT, INTNL TRANS. Also skips amount >= 0.
 
@@ -52,10 +50,12 @@ TRANSFER TO/FROM, FAST TRANSFER, WDL ATM, MYCARD CREDIT, CITIBANK CREDIT, TAX OF
 - ANTHROPIC_API_KEY (enables LLM categorisation; without it falls back to keywords)
 
 ## Known Issues / Git State (April 2026)
-- Local git repo HEAD is behind GitHub. Run `git pull` from GitKraken to resync local repo before next coding session.
+- Local git repo is behind GitHub (GitKraken index.lock prevents sandbox git pulls). Use GitHub web editor for commits, or `git fetch origin && git reset --hard origin/main` from a Windows terminal to sync locally.
 - The `.git/config` and `.git/HEAD` files had null byte corruption in a previous session; both were rewritten cleanly.
 
 ## Recent Commit History
+- 0872ef6: "fix: force-dynamic on subscriptions GET route to prevent stale caching" — READY on Vercel. Fixes persistence bug where Recurring page changes were lost on navigation.
+- 85be950: "fix: force-dynamic on uncategorized + subscriptions GET routes to fix caching bug" — superseded by 0872ef6 (subscriptions route was truncated in 85be950)
 - e88ed86: "Refactor merchant mapping logic in import route" — user mappings take full priority; LLM only runs for merchants with zero existing mapping (any account, any status). READY on Vercel.
 - 663937ab: "Specify type for newMerchants Set" (TS fix — builds clean)
 - d3a4579: "fix: distinguish real DB errors from duplicates in import; add errors counter"
@@ -63,6 +63,13 @@ TRANSFER TO/FROM, FAST TRANSFER, WDL ATM, MYCARD CREDIT, CITIBANK CREDIT, TAX OF
 - 4b956b8: "fix: force-dynamic on home page so redirect checks DB on every request"
 - ecb97ed: "fix: ts type cast and eslint warning blocking build"
 - 3fe9538: "feat: startup wizard, LLM categorisation via Claude Haiku, account creation, DB reset endpoint"
+
+## Bug Fix: Next.js Caching (April 2026)
+Root cause of "changes not persisting" on Recurring and Transactions pages: Next.js 14 App Router statically caches GET route handlers that don't use the `request` parameter. POST saves were writing to Supabase correctly, but the GET on reload returned a stale cached response.
+Fix: `export const dynamic = 'force-dynamic'` added to:
+- `src/app/api/transactions/uncategorized/route.ts` (commit 85be950 / 0872ef6)
+- `src/app/api/subscriptions/route.ts` (commit 0872ef6)
+Note: `src/app/api/mappings/route.ts` was already safe (uses `req: NextRequest` parameter).
 
 ## Screen Test Results (April 2026)
 All post-wizard screens verified working against live production data:

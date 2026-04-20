@@ -8,6 +8,12 @@
 - See: NOTEREADY.md, NOTEREADY_BACKLOG.md
 - Note: First non-PropTech product — NDIS progress note writer
 
+## Confluence Space Steward — in design
+- No repo (lives in Claude Project conversations for now)
+- Status: IN DESIGN — project instructions in portfoliostate repo
+- See: PROJECT_INSTRUCTIONS_CONFLUENCE_STEWARD.md
+- Note: Personal productivity tool, not a product — Claude as persistent steward of Steve's work Confluence space
+
 ## SubdivideIQ — pre-launch
 - Repo: stevenpicton1979/subdivideiq (to be created)
 - Domain: TBD — will buy at launch

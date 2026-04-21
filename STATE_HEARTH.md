@@ -32,6 +32,7 @@ categorising, and analysing expenses. Replaces the old finance-tracker app entir
 - **liabilities** — manual liabilities
 - **net_worth_snapshots** — historical net worth snapshots
 - **goals** — financial goals
+- **training_labels** — PENDING MIGRATION; merchant benchmark dataset (status: pending/confirmed/actioned, holdout flag, suggested_rule); unique on (household_id, merchant)
 
 ## The 4 CBA Accounts
 All in DB (accounts table):
@@ -48,7 +49,8 @@ Net worth page shows "balance not available" for accounts with null current_bala
 - `src/lib/transferPatterns.ts` — Patterns for skipping internal transfers
 - `src/lib/autoCategory.ts` — Keyword-based category guessing (17 categories)
 - `src/lib/categoryPipeline.ts` — processBatch() + upsertTransactions(); latter returns { inserted, duplicates, autoCategorised } from actual DB-inserted rows
-- `src/lib/subscriptionDetector.ts` — detectSubscriptions(); requires min 3 occurrences; excludes Shopping, Eating Out, Food & Groceries, Transport, Medical, Pets, Personal Care categories
+- `src/lib/subscriptionDetector.ts` — detectSubscriptions(); requires min 2 occurrences; excludes Shopping, Food & Groceries, Transport, Medical, Pets, Personal Care (Eating Out removed to catch HelloFresh etc.)
+- `src/lib/ruleImpact.ts` — ruleImpact(keyword, transactions) impact preview utility
 - `src/app/api/import/route.ts` — POST: parse CSV, processBatch, upsertTransactions, update current_balance
 - `src/app/net-worth/NetWorthClient.tsx` — shows "balance not available" for null current_balance accounts
 
@@ -78,6 +80,63 @@ Net worth page shows "balance not available" for accounts with null current_bala
 17 categories: Transport, Eating Out, Food & Groceries, Entertainment, Technology,
 Health & Fitness, Medical, Insurance, Household, Shopping, Education, Travel,
 Mortgage, Utilities, Charity, Pets, Personal Care, Business
+
+## What Shipped (April 22 2026 — Ground Truth Evaluation System)
+
+Overnight build — all 7 chunks delivered in one commit (10fc59a → main).
+
+### New page: /dev/training (URL-only, NOT in nav)
+- **Label tab**: 80 non-holdout merchants from training_labels, pending-first sorted by spend.
+  Progress bar, filter bar (All/Pending/Confirmed/Actioned/Mismatches only).
+  Per-card inline edit: category, classification, income/transfer/subscription toggles,
+  frequency dropdown, notes, Confirm button.
+  Mismatch warning (yellow) with "Copy rule suggestion" + "Preview impact" buttons.
+  Holdout cards are amber-tinted (reserved 20 merchants).
+- **Evaluate tab**: Run evaluation button → category accuracy, dollar-weighted accuracy,
+  transfer accuracy, rule coverage (vs confirmed labels). Failure table with spend data.
+  Collapsible holdout section. Overfitting warning if holdout accuracy drops >10% below benchmark.
+  "Export as test fixtures" → downloads groundTruth.fixtures.ts.
+- **Subscription Audit tab**: Yes/No toggle per subscription. Precision/recall metrics.
+  False positive and false negative lists.
+- **Seed now** button on page: calls POST /api/dev/seed-training — seeds top 100 merchants,
+  20 holdout (fnv32a hash % 5 === 0), idempotent.
+
+### New database table: training_labels
+- Apply `scripts/migrate_training_labels.sql` in Supabase SQL editor (project npydbobvppfqdoiyiuar)
+- Schema: merchant, correct_category, correct_classification, is_income, is_transfer,
+  is_subscription, subscription_frequency, notes, status, suggested_rule, holdout, labelled_at
+- Unique constraint: (household_id, merchant)
+- **NOT yet applied** — Steve needs to run the migration in Supabase SQL editor, then click "Seed now"
+
+### New API routes
+- `GET /api/dev/training-labels` — list all labels with transaction stats
+- `PUT /api/dev/training-labels` — update a label
+- `POST /api/dev/seed-training` — seed top 100 merchants from transactions
+- `POST /api/dev/evaluate` — run accuracy evaluation against confirmed labels
+- `GET /api/dev/training-export` — export confirmed labels as TypeScript fixtures
+- `GET /api/dev/rule-impact?keyword=...` — preview how many transactions a keyword would match
+- `GET /api/subscriptions` — expose detectSubscriptions as JSON API
+
+### New test files
+- `src/lib/__tests__/groundTruth.fixtures.ts` — placeholder (regenerate from /dev/training → Export)
+- `src/lib/__tests__/groundTruth.test.ts` — 80% accuracy gate (vacuously passes until fixtures populated)
+  Individual per-merchant tests use `test.skip` (informational only, don't gate CI)
+
+### New library files
+- `src/lib/ruleImpact.ts` — ruleImpact(keyword, transactions) utility
+
+### Scripts
+- `scripts/migrate_training_labels.sql` — SQL to paste in Supabase editor
+- `scripts/seedTrainingLabels.ts` — CLI seed script (needs valid SUPABASE_SERVICE_ROLE_KEY)
+- `scripts/applyTrainingSchema.ts` — programmatic migration runner (same requirement)
+
+### Steve's next actions
+1. Paste `scripts/migrate_training_labels.sql` into Supabase SQL editor (project npydbobvppfqdoiyiuar)
+2. Visit https://app.hearth.money/dev/training and click "Seed now"
+3. Work through Label tab — confirm or correct categories for each merchant
+4. Once 20+ labels confirmed: click "Run evaluation" on Evaluate tab
+5. Click "Export as test fixtures" → save output as src/lib/__tests__/groundTruth.fixtures.ts
+6. Run `npm test` — the 80% gate will now be live
 
 ## What Shipped (April 21 2026 Sprint)
 
@@ -124,11 +183,11 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business
 - Bills & Direct Debits + Nicola's Account have real current_balance values
 - Business Credit Card + Smart Awards have null current_balance (no balance in CBA credit card CSV exports)
 
-## Current State (April 21 2026)
-- **Tests:** 215 passing (was 205)
+## Current State (April 22 2026)
+- **Tests:** 238 passing (7 test files)
 - **Build:** clean
 - **Live:** https://app.hearth.money deployed on Vercel
-- **Known issue:** Income shows $0 — salary account may not be connected via Basiq, or salary transactions aren't in the imported CSVs. The income feature is wired up and working; it just needs the data.
+- **Pending:** training_labels table not yet created in Supabase (Steve needs to run migration SQL)
 
 ## Pending Work / Known Issues
 1. **Income shows $0** — Salary account may not be connected via Basiq, or salary transactions aren't in the imported CSVs. The income feature is wired up and working; it just needs the data.

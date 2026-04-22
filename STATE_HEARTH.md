@@ -25,7 +25,8 @@ Handles the complexity of a director/owner structure: wages, drawings, dividends
 - `/mappings` — Admin view of merchant_mappings (89+ rules), searchable, editable
 - `/settings` — Hub linking to accounts, budgets, categories, mappings, import, export, income entries, Xero
 - `/settings/income-entries` — Manual income entries (dividends, director fees, EOY events)
-- `/settings/xero` — Xero OAuth connection + Sync Now button
+- `/settings/xero` — Xero OAuth connection + Sync Now + Full Re-sync buttons
+- `/business` — Business P&L: revenue, expenses, net profit by category, top merchants, recent transactions
 - `/dev/training` — Ground truth labelling UI (URL-only, not in nav)
 
 ## Database Schema (Supabase project npydbobvppfqdoiyiuar)
@@ -51,7 +52,8 @@ Steve's accounts and their intended scopes:
 - Nicola's Account (CBA) → household
 - Business Credit Card (CBA) → business
 - Smart Awards (CBA) → household (personal rewards card)
-- Xero (Business) — auto-created by Xero sync → business (SET THIS IN SETTINGS → ACCOUNTS)
+- Brisbane Health Tech (Xero) → business (auto-created by Xero sync — set scope in Settings → Accounts)
+- Mastercard Bus. Plat. (Xero) → business (auto-created by Xero sync — set scope in Settings → Accounts)
 - NAB CC / Business Amex → business
 
 ## Xero Integration
@@ -59,11 +61,15 @@ Steve's accounts and their intended scopes:
 - Auth: OAuth 2.0 Web App, Client ID/Secret in Vercel env vars (XERO_CLIENT_ID, XERO_CLIENT_SECRET)
 - Redirect URI: https://app.hearth.money/api/xero/callback (set in XERO_REDIRECT_URI env var)
 - Scopes: openid profile email accounting.banktransactions.read accounting.settings.read offline_access
-- Sync: incremental via If-Modified-Since header; first sync pulled full history (1426 new + 574 duplicates)
-- Virtual account "Xero (Business)" auto-created in accounts table on first sync
+- Sync: incremental via If-Modified-Since header; full history on first sync
+- Per-bank-account: creates separate Hearth accounts keyed by Xero BankAccount.AccountID + Name
+  - "Brisbane Health Tech" — main business bank account
+  - "Mastercard Bus. Plat." — business credit card
 - Transactions from Xero scoped as 'business', source='xero'
-- Category mapping: xeroCategories.ts maps Xero account types/codes → Hearth categories
-- EQUITY/drawings accounts → Director Income; REVENUE → Business; EXPENSE by keyword
+- SPEND-TRANSFER → is_transfer=true; RECEIVE-TRANSFER skipped (avoids duplicates)
+- Category mapping: xeroCategories.ts — AccountCode lookup first (AU standard chart), then type/keyword fallback
+  - 477/478 → Director Income, 493 → Transport, 489/490 → Technology, 420 → Eating Out, etc.
+- EQUITY/drawings accounts → Director Income; REVENUE → Business; EXPENSE by code then keyword
 
 ## Director Income & Business Structure
 - Brisbane Health & Technology Pty Ltd pays Steve wages + director drawings
@@ -90,16 +96,18 @@ Net worth page shows "balance not available" for accounts with null current_bala
 - `src/lib/subscriptionDetector.ts` — detectSubscriptions(); min 2 occurrences; excludes Shopping, Food & Groceries, Transport, Medical, Pets, Personal Care
 - `src/lib/directorIncome.ts` — Detects incoming CBA credits matching payroll patterns; flags is_transfer=false, category='Director Income'
 - `src/lib/xeroApi.ts` — Xero API client: getXeroConnection (with auto token refresh), getXeroBankTransactions (paginated, incremental via If-Modified-Since), getXeroAccounts
-- `src/lib/xeroCategories.ts` — Maps Xero account types/codes to Hearth categories; parseXeroDate; cleanXeroMerchant
+- `src/lib/xeroCategories.ts` — Maps Xero account types/codes to Hearth categories; parseXeroDate; cleanXeroMerchant; mapXeroAccountToCategory (AccountCode lookup); mapXeroTransactionClassification; shouldScopeAsHousehold
 - `src/lib/ruleImpact.ts` — ruleImpact(keyword, transactions) impact preview utility
 - `src/app/api/import/route.ts` — POST: parse CSV, processBatch, upsertTransactions, update current_balance
 - `src/app/api/xero/auth/route.ts` — Xero OAuth redirect (state cookie for CSRF)
 - `src/app/api/xero/callback/route.ts` — Xero OAuth callback; exchanges code for tokens; stores in xero_connections
-- `src/app/api/xero/sync/route.ts` — POST: incremental sync from Xero; creates Xero (Business) account if needed
+- `src/app/api/xero/sync/route.ts` — POST: incremental sync from Xero; per-bank-account separation; SPEND-TRANSFER handling; AccountCode category mapping
 - `src/app/api/xero/status/route.ts` — GET: connection status
 - `src/app/api/xero/connection/route.ts` — DELETE: disconnect Xero
 - `src/app/api/manual-income/route.ts` — CRUD for manual_income_entries
 - `src/app/api/admin/recategorise/route.ts` — POST: re-run auto-categorisation on uncategorised transactions
+- `src/app/api/business/summary/route.ts` — GET ?month=YYYY-MM: business-scoped P&L summary
+- `src/app/business/page.tsx` — Business P&L page
 
 ## CSV Format (CBA)
 - Transaction/savings accounts: Date, Amount (negative=expense), Description, Balance — NO header row
@@ -116,13 +124,13 @@ Net worth page shows "balance not available" for accounts with null current_bala
 - `npm test` — run all tests
 - `npm run test:watch` — watch mode
 - `npm run test:coverage` — coverage report
-- **285 tests passing** across 8 test files in src/lib/__tests__/:
+- **297 tests passing** across 8 test files in src/lib/__tests__/:
   - csvParser.test.ts — import layer
   - cleanMerchant.test.ts — merchant name cleaning
   - transferPatterns.test.ts — transfer detection
   - autoCategory.test.ts — categorisation (incl. Government & Tax)
   - subscriptionDetector.test.ts — subscription detection
-  - xeroCategories.test.ts — Xero category mapping, date parsing, merchant cleaning
+  - xeroCategories.test.ts — Xero category mapping, date parsing, merchant cleaning, AccountCode mapping
   - groundTruth.fixtures.ts — placeholder (regenerate from /dev/training → Export)
   - groundTruth.test.ts — 80% accuracy gate (vacuously passes until fixtures populated)
 
@@ -130,6 +138,34 @@ Net worth page shows "balance not available" for accounts with null current_bala
 18 categories: Transport, Eating Out, Food & Groceries, Entertainment, Technology,
 Health & Fitness, Medical, Insurance, Household, Shopping, Education, Travel,
 Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
+
+## Known TypeScript Gotcha
+- `tsconfig.json` has a low `target` — Set and Map iteration with `for...of` fails at build time.
+- Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
+- Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
+
+## What Shipped (April 22 2026 — Session 3: Xero Data Quality + Business P&L)
+
+### Xero Sync Improvements
+- **Per-bank-account separation** — creates one Hearth account per Xero BankAccount (Brisbane Health Tech + Mastercard Bus. Plat.) instead of a single "Xero (Business)"
+- **Transfer dedup** — RECEIVE-TRANSFER skipped; SPEND-TRANSFER stored with is_transfer=true
+- **AccountCode category mapping** — comprehensive AU chart of accounts code → Hearth category lookup in mapXeroAccountToCategory; far more accurate than keyword-only
+- **Richer merchant names** — cleanXeroMerchant: lineItem description > reference > contactName > narration priority
+- **Date fix** — parseXeroDate now handles both /Date(ms)/ and ISO 8601 formats
+- **Fix: Map iteration** — replaced `for...of map` with `Array.from(map.entries())` (TypeScript target limitation)
+- DB cleanup + full re-sync performed: old Xero transactions/accounts deleted, last_synced_at NULLed, re-synced
+
+### Business P&L Page
+- New page: `/business` — revenue, expenses, net profit, expense by category chart, top merchants, recent transactions
+- New API: `/api/business/summary?month=YYYY-MM`
+
+### Ground Truth Training
+- training_labels migration run in Supabase (done)
+- Seeded: 264 merchants, 58 holdout reserved
+- Steve has confirmed ~7 labels so far; working through Label tab at /dev/training
+
+### Debug Cleanup Needed
+- `src/app/api/xero/debug/route.ts` — temporary debug endpoint, should be deleted (in BACKLOG)
 
 ## What Shipped (April 22 2026 — Session 2: Business Structure + Xero)
 
@@ -158,7 +194,6 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - New DB column: xero_connections.last_synced_at (migration: scripts/addXeroLastSynced.sql — done)
 - Incremental sync via If-Modified-Since header; full history on first sync
 - Xero scopes: accounting.banktransactions.read + accounting.settings.read (new granular scopes, required for apps created after March 2 2026)
-- 1426 transactions synced from Brisbane Health & Technology full history
 - New settings page: /settings/xero with Connect/Sync Now/Disconnect
 - Env vars in Vercel: XERO_CLIENT_ID, XERO_CLIENT_SECRET, XERO_REDIRECT_URI
 
@@ -173,47 +208,40 @@ Overnight build — all 7 chunks delivered in one commit.
 ### New page: /dev/training (URL-only, NOT in nav)
 - Label tab, Evaluate tab, Subscription Audit tab
 - Seed now button → POST /api/dev/seed-training (top 100 merchants, 20 holdout)
-- training_labels table migration: scripts/migrate_training_labels.sql (run in Supabase — PENDING)
-
-### Steve's next actions for ground truth
-1. Paste `scripts/migrate_training_labels.sql` into Supabase SQL editor (project npydbobvppfqdoiyiuar)
-2. Visit https://app.hearth.money/dev/training and click "Seed now"
-3. Work through Label tab — confirm or correct categories for each merchant
-4. Once 20+ labels confirmed: click "Run evaluation" on Evaluate tab
-5. Click "Export as test fixtures" → save output as src/lib/__tests__/groundTruth.fixtures.ts
-6. Run `npm test` — the 80% gate will now be live
+- training_labels table migration: scripts/migrate_training_labels.sql (run in Supabase — done)
 
 ## Recent Commit History (latest first)
+- 2130f3c: "fix: Map iteration downlevelIteration error in Xero sync route"
+- 0b1bd4f: "feat: Xero sync improvements — transfer detection, AccountCode category mapping, per-bank-account separation"
+- d4c1bd3: "debug: temporary Xero raw data endpoint (remove after debugging)"
+- b27d53c: "feat: richer Xero transaction descriptions using line item, narration, and bank account fields"
+- 93ff62e: "fix: Set iteration and Business P&L build errors"
+- 707a21c: "fix: always show Confirm button on pending training label cards"
+- 4afb5ec: "feat: Business P&L page with revenue, expenses, net profit by category"
+- dc1fd90: "fix: recentlyConfirmed override only applies on Pending filter"
+- b27c099: "fix: parseXeroDate handles ISO 8601 dates from Xero API"
 - a1dd774: "fix: add Accept: application/json header to Xero API calls"
-- (incremental sync): "feat: incremental Xero sync using If-Modified-Since"
-- 9fe3fe3: "fix: use new Xero granular scope accounting.banktransactions.read"
-- dd94c0c: "fix: replace invalid accounting.accounts.read scope with accounting.settings.read"
-- cee6e0b: "fix: unused req param lint errors in Xero routes"
-- b95539c: "feat: Xero OAuth integration + transaction sync"
-- 6f8a7f7: "feat: business summary widget on dashboard"
-- 53afc86: "feat: manual income entries — table, API, settings UI, integrated into monthly totals"
-- a3735cb: "feat: Director Income detection, Income badge, un-exclude action"
-- 67704af: "feat: scope-aware metrics across spending, dashboard, subscriptions, net worth, transactions"
 
 ## Data State (April 22 2026)
 - ~599 transactions from 4 CBA CSV imports (household accounts)
-- 1426 transactions from Xero (Brisbane Health & Technology full history)
+- Xero transactions re-synced: now split across Brisbane Health Tech + Mastercard Bus. Plat. accounts
 - 89+ merchant mappings in merchant_mappings table
 - 4 manual income entries: FY2024-25 dividends ($51,298 × 2) + franking credits ($17,099 × 2)
 - Bills & Direct Debits + Nicola's Account have real current_balance values
 - Business Credit Card + Smart Awards have null current_balance (no balance in CBA credit card CSV exports)
+- training_labels: 264 merchants seeded, 58 holdout, ~7 confirmed
 
 ## Current State (April 22 2026)
-- **Tests:** 285 passing (8 test files)
+- **Tests:** 297 passing (8 test files)
 - **Build:** clean
 - **Live:** https://app.hearth.money deployed on Vercel
-- **Xero:** Connected to Brisbane Health & Technology, 1426 transactions synced, incremental sync live
+- **Xero:** Connected to Brisbane Health & Technology, re-synced with per-account separation + AccountCode mapping
 
 ## Pending Work / Known Issues
-1. **Set account scopes** — Go to Settings → Accounts and set: Xero (Business) → business; Business Credit Card → business; Business Amex → business. NAB CC → decide household or business.
-2. **training_labels migration** — Run scripts/migrate_training_labels.sql in Supabase, then Seed now at /dev/training. (Ground truth system built but not yet seeded.)
-3. **Xero categorisation cleanup** — Several Xero merchants miscategorised: STAN/Netflix → Entertainment (not Transport/Eating Out); KFC/Guzman → Eating Out (not Business). Fix via merchant mappings or autoCategory rules.
-4. **Income shows $0 this month** — Wages/salary credits not in current month's imported CSVs. Manual income entries are annual (July 2024), so don't appear in April 2026 view. Need to import more recent CSVs or connect live bank feed.
+1. **Set account scopes** — In Settings → Accounts: set Brisbane Health Tech → business, Mastercard Bus. Plat. → business. Also Business Credit Card (CBA) → business if not done. NAB CC → decide.
+2. **Remove debug endpoint** — Delete `src/app/api/xero/debug/route.ts` (left from debugging session).
+3. **Xero categorisation cleanup** — Some Xero merchants still miscategorised. Fix via /mappings or autoCategory rules as they appear in training UI.
+4. **Income shows $0 this month** — Wages/salary credits not in current month's imported CSVs. Need to import more recent CSVs.
 5. **Subscriptions UI** — Add Confirm / Dismiss per row. Dismissed merchants → merchant_mappings with classification='Not a subscription'.
 6. **Mappings sidebar nav** — /mappings only accessible via Settings. Should be in sidebar.
 7. **BUG-001** — www.hearth.money redirect not configured.
@@ -221,9 +249,11 @@ Overnight build — all 7 chunks delivered in one commit.
 9. **Business Credit Card balance** — enter manually on Net Worth page.
 10. **Goals page** — empty state, no goals added yet.
 11. **Edit button on Income Entries** — currently delete-and-re-add only; should have inline edit.
-12. **Net Worth overstated** — Xero (Business) account not yet scoped to business; may be inflating headline net worth figure until scope is set.
-13. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
-14. **Xero force full re-sync** — No UI option to force a full re-sync (currently requires manually NULLing last_synced_at in Supabase). Add a "Full re-sync" button to Settings → Xero that clears last_synced_at and re-fetches all history.
+12. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
+13. **Xero force full re-sync** — No UI option to force a full re-sync (currently requires manually NULLing last_synced_at in Supabase). Add a "Full re-sync" button to Settings → Xero.
+14. **Transfer linking** — Link matched transfer transactions across accounts. Store linked_transfer_id on both rows. Useful for Division 7A audit trail.
+15. **Training card: example descriptions** — Show 2-3 actual transaction description strings per merchant card in /dev/training to aid labelling decisions.
+16. **Ground truth fixtures** — Once 20+ labels confirmed at /dev/training, click "Export as test fixtures" → save as src/lib/__tests__/groundTruth.fixtures.ts, then run npm test to activate 80% gate.
 
 ## Git / Workflow Notes
 - Use **Claude Code** for all code changes and git operations (NOT the Cowork sandbox)

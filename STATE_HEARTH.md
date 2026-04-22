@@ -222,6 +222,8 @@ Overnight build — all 7 chunks delivered in one commit.
 10. **Goals page** — empty state, no goals added yet.
 11. **Edit button on Income Entries** — currently delete-and-re-add only; should have inline edit.
 12. **Net Worth overstated** — Xero (Business) account not yet scoped to business; may be inflating headline net worth figure until scope is set.
+13. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
+14. **Xero force full re-sync** — No UI option to force a full re-sync (currently requires manually NULLing last_synced_at in Supabase). Add a "Full re-sync" button to Settings → Xero that clears last_synced_at and re-fetches all history.
 
 ## Git / Workflow Notes
 - Use **Claude Code** for all code changes and git operations (NOT the Cowork sandbox)

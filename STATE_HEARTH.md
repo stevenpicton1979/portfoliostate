@@ -144,6 +144,44 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
 - Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
 
+## What Shipped (April 22 2026 — Overnight Backlog: Nav + Subscriptions + Xero + Income + Training)
+
+All 7 BACKLOG.md items delivered in a single overnight session.
+
+### 1. Removed debug endpoint
+- Deleted `src/app/api/xero/debug/route.ts` (temporary Xero raw data endpoint)
+
+### 2. `.gitattributes` — LF line endings
+- Added `.gitattributes` at repo root; eliminates CRLF warnings on every commit from Windows
+
+### 3. Mappings in sidebar nav
+- `/mappings` now directly accessible in sidebar between Subscriptions and Net Worth
+- Uses `TagIcon` from heroicons; added to Sidebar.tsx, BottomNav.tsx, and navItems.ts
+
+### 4. Subscriptions — Confirm and Dismiss per row
+- Each subscription row (Active/Lapsed/All tabs) now has **Confirm** and **Dismiss** buttons
+- Confirm → writes `classification='Subscription'` to merchant_mappings via PATCH upsert
+- Dismiss → writes `classification='Not a subscription'`; dismissed merchants filtered out server-side on next load
+- Added PATCH upsert endpoint to `POST /api/mappings` (fixed the broken POST-with-body pattern that existed)
+- Dismissed merchants filter applied in `SubscriptionsPage` before passing to client
+
+### 5. Xero Full Re-sync button
+- "Full Re-sync" button added to Settings → Xero alongside existing "Sync Now"
+- Uses `POST /api/xero/sync?full=true` — NULLs `last_synced_at` then runs standard sync
+- Saves having to manually run SQL in Supabase for a full re-sync
+- Added `NextRequest` param to sync route; `?full=true` handled at the top
+
+### 6. Inline edit for Income Entries
+- Each income entry row now has an Edit (pencil) button
+- Expands row to full-width inline form with all fields: date, amount, description, category, recipient, financial_year
+- Save calls `PUT /api/manual-income` (new endpoint added); Cancel reverts to read-only
+- Delete behaviour unchanged
+
+### 7. Training card — example transaction descriptions
+- Each merchant card on `/dev/training` now shows up to 3 distinct raw transaction `description` values
+- Fetched lazily on mount via `GET /api/dev/merchant-examples?merchant=X`
+- Displayed in italics under the date range / accounts metadata
+
 ## What Shipped (April 22 2026 — Session 3: Xero Data Quality + Business P&L)
 
 ### Xero Sync Improvements
@@ -211,6 +249,13 @@ Overnight build — all 7 chunks delivered in one commit.
 - training_labels table migration: scripts/migrate_training_labels.sql (run in Supabase — done)
 
 ## Recent Commit History (latest first)
+- fbf18d1: "chore: mark all backlog items complete"
+- f0bad3d: "feat: show example transaction descriptions on training label cards"
+- c7b41a4: "feat: inline edit for income entries with PUT /api/manual-income"
+- 67db50a: "feat: Xero full re-sync button (POST /api/xero/sync?full=true nulls last_synced_at)"
+- e3aba0c: "feat: subscription Confirm and Dismiss actions with merchant_mappings persistence"
+- b370aa3: "feat: add Mappings to sidebar navigation with tag icon"
+- 6ca905b: "chore: remove debug endpoint and add .gitattributes for LF line endings"
 - 2130f3c: "fix: Map iteration downlevelIteration error in Xero sync route"
 - 0b1bd4f: "feat: Xero sync improvements — transfer detection, AccountCode category mapping, per-bank-account separation"
 - d4c1bd3: "debug: temporary Xero raw data endpoint (remove after debugging)"
@@ -231,7 +276,7 @@ Overnight build — all 7 chunks delivered in one commit.
 - Business Credit Card + Smart Awards have null current_balance (no balance in CBA credit card CSV exports)
 - training_labels: 264 merchants seeded, 58 holdout, ~7 confirmed
 
-## Current State (April 22 2026)
+## Current State (April 22 2026 — post overnight backlog)
 - **Tests:** 297 passing (8 test files)
 - **Build:** clean
 - **Live:** https://app.hearth.money deployed on Vercel
@@ -239,21 +284,14 @@ Overnight build — all 7 chunks delivered in one commit.
 
 ## Pending Work / Known Issues
 1. **Set account scopes** — In Settings → Accounts: set Brisbane Health Tech → business, Mastercard Bus. Plat. → business. Also Business Credit Card (CBA) → business if not done. NAB CC → decide.
-2. **Remove debug endpoint** — Delete `src/app/api/xero/debug/route.ts` (left from debugging session).
-3. **Xero categorisation cleanup** — Some Xero merchants still miscategorised. Fix via /mappings or autoCategory rules as they appear in training UI.
-4. **Income shows $0 this month** — Wages/salary credits not in current month's imported CSVs. Need to import more recent CSVs.
-5. **Subscriptions UI** — Add Confirm / Dismiss per row. Dismissed merchants → merchant_mappings with classification='Not a subscription'.
-6. **Mappings sidebar nav** — /mappings only accessible via Settings. Should be in sidebar.
-7. **BUG-001** — www.hearth.money redirect not configured.
-8. **.gitattributes** — LF/CRLF warnings on every commit from Windows.
-9. **Business Credit Card balance** — enter manually on Net Worth page.
-10. **Goals page** — empty state, no goals added yet.
-11. **Edit button on Income Entries** — currently delete-and-re-add only; should have inline edit.
-12. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
-13. **Xero force full re-sync** — No UI option to force a full re-sync (currently requires manually NULLing last_synced_at in Supabase). Add a "Full re-sync" button to Settings → Xero.
-14. **Transfer linking** — Link matched transfer transactions across accounts. Store linked_transfer_id on both rows. Useful for Division 7A audit trail.
-15. **Training card: example descriptions** — Show 2-3 actual transaction description strings per merchant card in /dev/training to aid labelling decisions.
-16. **Ground truth fixtures** — Once 20+ labels confirmed at /dev/training, click "Export as test fixtures" → save as src/lib/__tests__/groundTruth.fixtures.ts, then run npm test to activate 80% gate.
+2. **Xero categorisation cleanup** — Some Xero merchants still miscategorised. Fix via /mappings or autoCategory rules as they appear in training UI.
+3. **Income shows $0 this month** — Wages/salary credits not in current month's imported CSVs. Need to import more recent CSVs.
+4. **BUG-001** — www.hearth.money redirect not configured.
+5. **Business Credit Card balance** — enter manually on Net Worth page.
+6. **Goals page** — empty state, no goals added yet.
+7. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
+8. **Transfer linking** — Link matched transfer transactions across accounts. Store linked_transfer_id on both rows. Useful for Division 7A audit trail.
+9. **Ground truth fixtures** — Once 20+ labels confirmed at /dev/training, click "Export as test fixtures" → save as src/lib/__tests__/groundTruth.fixtures.ts, then run npm test to activate 80% gate.
 
 ## Git / Workflow Notes
 - Use **Claude Code** for all code changes and git operations (NOT the Cowork sandbox)

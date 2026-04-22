@@ -31,7 +31,7 @@ Handles the complexity of a director/owner structure: wages, drawings, dividends
 
 ## Database Schema (Supabase project npydbobvppfqdoiyiuar)
 - **accounts** — id, household_id, display_name, institution, account_type, current_balance (numeric), last_synced_at, is_active, scope ('household'|'business'|'investment', default 'household')
-- **transactions** — id, household_id, account_id, date, amount, description, merchant, category, classification, is_transfer, source ('csv'|'xero'); unique on (account_id, date, amount, description)
+- **transactions** — id, household_id, account_id, date, amount, description, merchant, category, classification, is_transfer, source ('csv'|'xero'), raw_description TEXT; unique on (account_id, date, amount, description)
 - **merchant_mappings** — id, household_id, merchant, category, classification, notes; unique on (household_id, merchant)
 - **manual_income_entries** — id, household_id, date, amount, description, category, recipient, financial_year
 - **xero_connections** — id, household_id, tenant_id, tenant_name, access_token, refresh_token, expires_at, last_synced_at, created_at, updated_at; unique on (household_id, tenant_id). No RLS.
@@ -124,7 +124,7 @@ Net worth page shows "balance not available" for accounts with null current_bala
 - `npm test` — run all tests
 - `npm run test:watch` — watch mode
 - `npm run test:coverage` — coverage report
-- **297 tests passing** across 8 test files in src/lib/__tests__/:
+- **303 tests passing** across 8 test files in src/lib/__tests__/:
   - csvParser.test.ts — import layer
   - cleanMerchant.test.ts — merchant name cleaning
   - transferPatterns.test.ts — transfer detection
@@ -143,6 +143,25 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - `tsconfig.json` has a low `target` — Set and Map iteration with `for...of` fails at build time.
 - Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
 - Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
+
+## What Shipped (April 23 2026 — Items 8 & 9: raw_description + Skip button)
+
+### 8. raw_description column
+- Added `raw_description TEXT` column to transactions (nullable); run `scripts/addRawDescription.sql` in Supabase
+- Xero sync composes raw_description from: ContactName | Reference | Narration | LineItem[0].Description (pipe-joined, max 300 chars) via new `composeXeroRawDescription()` in xeroCategories.ts
+- CSV import stores original pre-clean description as raw_description
+- merchant-examples endpoint returns raw_description (richer context) when available; falls back to description
+- Transaction table shows raw_description as hover tooltip on merchant name
+- 6 new tests for composeXeroRawDescription (303 tests total)
+- **Action needed:** Run `scripts/addRawDescription.sql` migration in Supabase, then Full Re-sync from Settings → Xero
+
+### 9. Training card — Skip button
+- Each pending merchant card now has a "Skip" button alongside Confirm
+- Skip hides the card for the current session only (client-side state, not persisted)
+- "N skipped this session" count shown near filter bar
+- Skipped cards reappear on next page load
+
+---
 
 ## What Shipped (April 22 2026 — Overnight Backlog: Nav + Subscriptions + Xero + Income + Training)
 
@@ -274,15 +293,23 @@ Overnight build — all 7 chunks delivered in one commit.
 - 4 manual income entries: FY2024-25 dividends ($51,298 × 2) + franking credits ($17,099 × 2)
 - Bills & Direct Debits + Nicola's Account have real current_balance values
 - Business Credit Card + Smart Awards have null current_balance (no balance in CBA credit card CSV exports)
-- training_labels: 264 merchants seeded, 58 holdout, ~7 confirmed
+- training_labels: 264 merchants seeded, 58 holdout, ~10 confirmed (working through Label tab)
+- Merchants needing Xero lookup before labelling: "STEVEN PICTON" ($4,711 income, 2 txns), "D E" ($22,000 income, 2 txns)
 
-## Current State (April 22 2026 — post overnight backlog)
+## Current State (April 23 2026 — post overnight backlog)
 - **Tests:** 297 passing (8 test files)
 - **Build:** clean
 - **Live:** https://app.hearth.money deployed on Vercel
 - **Xero:** Connected to Brisbane Health & Technology, re-synced with per-account separation + AccountCode mapping
 
 ## Pending Work / Known Issues
+
+### In BACKLOG.md (Claude Code to build — items 8 & 9 not yet started)
+- **BACKLOG item 8** — `raw_description` column on transactions: store unprocessed Xero fields (ContactName | Reference | Narration | LineItem desc) during sync, and raw bank description for CSV. Show in training card Examples and as tooltip in /transactions. Requires Supabase migration (`scripts/addRawDescription.sql`), Xero sync + CSV import route changes, and a Full Re-sync after deploy. This unblocks labelling of ambiguous merchants like STEVEN PICTON and D E.
+- **BACKLOG item 9** — Skip/Defer button on training cards: client-side only, hides card for session, merchant stays pending in DB. Shows "N skipped this session" count.
+- **Note:** The loop is not auto-detecting items 8/9 (it cached "all 7 done"). Trigger manually: `work through items 8 and 9 in BACKLOG.md in C:\dev\personal-assistant\hearth-app`
+
+### Other Pending
 1. **Set account scopes** — In Settings → Accounts: set Brisbane Health Tech → business, Mastercard Bus. Plat. → business. Also Business Credit Card (CBA) → business if not done. NAB CC → decide.
 2. **Xero categorisation cleanup** — Some Xero merchants still miscategorised. Fix via /mappings or autoCategory rules as they appear in training UI.
 3. **Income shows $0 this month** — Wages/salary credits not in current month's imported CSVs. Need to import more recent CSVs.
@@ -291,7 +318,7 @@ Overnight build — all 7 chunks delivered in one commit.
 6. **Goals page** — empty state, no goals added yet.
 7. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
 8. **Transfer linking** — Link matched transfer transactions across accounts. Store linked_transfer_id on both rows. Useful for Division 7A audit trail.
-9. **Ground truth fixtures** — Once 20+ labels confirmed at /dev/training, click "Export as test fixtures" → save as src/lib/__tests__/groundTruth.fixtures.ts, then run npm test to activate 80% gate.
+9. **Ground truth fixtures** — Once 20+ labels confirmed at /dev/training, click "Export as test fixtures" → save as src/lib/__tests__/groundTruth.fixtures.ts, then run npm test to activate 80% gate. After BACKLOG item 8 ships + Full Re-sync, revisit "STEVEN PICTON" and "D E" labels.
 
 ## Git / Workflow Notes
 - Use **Claude Code** for all code changes and git operations (NOT the Cowork sandbox)

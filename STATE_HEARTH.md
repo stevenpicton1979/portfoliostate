@@ -148,6 +148,97 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
 - Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
 
+## What Shipped (April 25 2026 — Session 4: Xero GL as source of truth + merchant rule engine)
+
+### Architectural shift: Xero GL account = highest-priority categorisation source
+- `gl_account` and `gl_tax_type` columns added to transactions table (migration run in Supabase SQL editor)
+- Both fields captured in Xero sync (`src/app/api/xero/sync/route.ts`) from LineItems[].AccountCode + TaxType
+- Both fields flow through `RawTransaction` + `ProcessedTransaction` interfaces in `categoryPipeline.ts`
+- GL category now highest-priority auto-cat source on training page (above keyword eval, above dominant category)
+- Income transactions now categorised via GL hint (previously always got null category)
+- BPAY fallback: long CRN + `COMMBANK APP BPA` description → Business when no GL
+- gl_tax_type GST tiebreaker: if category still null and gl_tax_type='GST' → Business
+- `mapXeroAccountToCategory` fixes: 477/478→Payroll Expense, 479→Business, 445→Utilities, 495→Transport
+- New export: `mapGlAccountNameToCategory(name)` for training-labels API (uses name keyword fallback)
+
+### cleanXeroMerchant fixes (src/lib/xeroCategories.ts)
+- `isXeroCode` check: skip line item descriptions ≤4 chars all-caps (CSH, VRP, ROT, DISC etc.) — fall through to reference field
+- ATO BPAY normalisation: `^\d{10,}\s+commbank\s+app\s+bpa` (case-insensitive) → `'ATO'`; applies to ref and narration
+
+### cleanMerchant fix (src/lib/cleanMerchant.ts)
+- Strip BPAY CRN (10+ digit number) and short alpha/numeric suffix: `/\s+\d{10,}(\s+[a-z0-9]{1,6})*\s*$/i`
+- Unifies fragmented merchant names: "CITIBANK CREDITCARDS...5327803311171237 PAY CC" → "CITIBANK CREDITCARDS COMMBANK APP BPAY 49502"
+
+### transferPatterns fix (src/lib/transferPatterns.ts)
+- Removed word boundary from `/^citibank credit\b/i` — "CREDITCARDS" is one word, boundary was failing
+- Now: `/^citibank credit/i`, `/^mycard credit/i`, `/^nab credit/i`
+
+### merchantCategoryRules.ts — NEW named rule engine (src/lib/merchantCategoryRules.ts)
+- Explicit, documented, testable rules — single source of truth for well-known merchant patterns
+- Applied in `categoryPipeline.ts` before GL hint and keyword guessing
+- 6 rules shipped:
+  - `ato_payments`: ATO / Tax Office → Government & Tax
+  - `airbnb`: Airbnb → Travel
+  - `uber`: Uber → Transport
+  - `bell_partners`: Bell Partners accounting → Business
+  - `invoice_income`: "INVOICE" on income → Business
+  - `director_loan_repayment`: Steven/Nicola Picton as payer INTO business → Transfer (directors loan repayment)
+- Tests: `src/lib/__tests__/merchantCategoryRules.test.ts`
+
+### training-labels API (src/app/api/dev/training-labels/route.ts)
+- Added `gl_category` field: dominant GL account name → category via mapGlAccountNameToCategory
+- Added PATCH endpoint for bulk confirm
+- `gl_category` is highest-priority auto-cat source on training page
+
+### merchant-examples API (src/app/api/dev/merchant-examples/route.ts)
+- `collapsed_count` field: identical (description, amount) pairs collapsed, count shown as ×N badge
+- Transfer destination resolved from `account_suffix` match in description (e.g. XX5426 → Bills & Direct Debits) even when `linked_transfer_id` is null
+
+### training page UX (src/app/dev/training/page.tsx)
+- Dropdown changes no longer auto-confirm — only the explicit Confirm button promotes status from pending → confirmed
+- Bulk confirm button: "Confirm all auto-matched (N)"
+- ×N collapsed count badge on example cards
+- Auto-cat priority: GL category > keyword eval > dominant existing category
+- Seed result shows pruned orphan count
+
+### seed-training (src/app/api/dev/seed-training/route.ts)
+- Auto-prunes orphaned training labels (merchant in training_labels but no matching transactions)
+- Pruned count returned in response + shown in UI
+
+### csvParser.ts
+- NAB category map expanded: Government, Fees, Insurance, Medical, Education
+
+### SQL fixes run in Supabase this session
+- `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS gl_account TEXT; ADD COLUMN IF NOT EXISTS gl_tax_type TEXT;`
+- Renamed CSH/VRP/ROT/DISC merchant names to proper names via SQL
+- `UPDATE transactions SET merchant='ATO', description='ATO' WHERE description LIKE '%003009534934729521%'`
+- `DELETE FROM training_labels WHERE merchant LIKE '%003009534934729521%'` (dedup with existing ATO label)
+- `UPDATE transactions SET merchant='CITIBANK CREDITCARDS COMMBANK APP BPAY 49502' WHERE merchant ILIKE 'CITIBANK CREDITCARDS%'`
+- `UPDATE transactions SET is_transfer=true, category=null WHERE merchant ILIKE 'CITIBANK CREDITCARDS%'`
+- `UPDATE transactions SET category='Travel' WHERE merchant ILIKE 'airbnb%' AND category != 'Travel'`
+- Various training_labels dedup/rename fixes
+
+### Tests
+- `src/lib/__tests__/cleanXeroMerchant.test.ts` — NEW: regression tests for Xero GL code rejection + ATO BPAY normalisation (mixed case)
+- `src/lib/__tests__/merchantCategoryRules.test.ts` — NEW: 6 rule groups, ~20 tests
+- All tests passing (run `npx vitest run` to verify count)
+
+### Commits to push (git commands for user — cannot push from sandbox)
+```bash
+cd C:/dev/personal-assistant/hearth-app
+git add -A
+git commit -m "feat: Xero GL as category source of truth + merchant rule engine + training UX fixes"
+git push
+```
+
+### Pending after this session
+- Full Xero re-sync with `?full=true` to backfill gl_account/gl_tax_type on all existing transactions
+- Continue working through training labels (was at ~18 confirmed of 305, 65 auto-matchable)
+- Click "Seed now" to prune orphaned labels (WAGE TRANSFER..., CITIBANK...PAY CC variants)
+- Eventually: run `npx vitest run` to confirm all tests pass after all the new files
+
+---
+
 ## What Shipped (April 25 2026 — Session 3: Training page FROM/TO bug fixes)
 
 ### Bug fixes — ExampleCard and merchant-examples API

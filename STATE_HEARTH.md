@@ -124,13 +124,16 @@ Net worth page shows "balance not available" for accounts with null current_bala
 - `npm test` — run all tests
 - `npm run test:watch` — watch mode
 - `npm run test:coverage` — coverage report
-- **303 tests passing** across 8 test files in src/lib/__tests__/:
+- **335 tests passing** across 10 test files in src/lib/__tests__/:
   - csvParser.test.ts — import layer
   - cleanMerchant.test.ts — merchant name cleaning
   - transferPatterns.test.ts — transfer detection
   - autoCategory.test.ts — categorisation (incl. Government & Tax)
   - subscriptionDetector.test.ts — subscription detection
   - xeroCategories.test.ts — Xero category mapping, date parsing, merchant cleaning, AccountCode mapping
+  - rawDescription.test.ts — composeXeroRawDescription + type tests
+  - categorisationEdgeCases.test.ts — edge cases
+  - transferLinker.test.ts — 8 tests: happy path, one-sided is_transfer regression, same account, amount mismatch, date mismatch, no re-link in same run, bidirectional linking, correct pair count
   - groundTruth.fixtures.ts — placeholder (regenerate from /dev/training → Export)
   - groundTruth.test.ts — 80% accuracy gate (vacuously passes until fixtures populated)
 
@@ -144,7 +147,30 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
 - Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
 
-## What Shipped (April 25 2026 — Transfer linking + Training UI)
+## What Shipped (April 25 2026 — Session 2: transferLinker tests + stale link cleanup)
+
+### transferLinker.ts bug fix (BOTH sides must be is_transfer=true)
+- Bug: old logic linked pairs where **at least one** side was `is_transfer=true` — caused ATO card false positive (non-transfer row linked to a transfer row)
+- Fix: guard in `linkTransferPairs` now requires `!a.is_transfer || !b.is_transfer → continue` — **both** sides must be flagged
+- Commit: `af0e857` (shipped in session 1)
+
+### transferLinker tests (8 tests)
+- New: `src/lib/__tests__/transferLinker.test.ts`
+- Uses `vi.hoisted()` + `vi.mock('../supabase/server')` to mock Supabase without hitting the DB
+- 8 cases: happy path, one-sided is_transfer=false regression (the ATO bug), same account, amount mismatch, date mismatch, no re-link in same run (paired Set), bidirectional (both rows get each other's id), correct pair count across multiple dates
+- All 335 tests pass
+
+### DB cleanup migration
+- New: `scripts/010_clean_stale_links.sql`
+- Removes stale `linked_transfer_id` links written by the old logic: Step 1 clears links on non-transfer rows; Step 2 clears links where the counterpart lacks `is_transfer=true`
+- **ACTION NEEDED: run in Supabase SQL editor (npydbobvppfqdoiyiuar)**
+
+### Commit
+- `6a6062e` — "test: add transferLinker tests (8 cases) + DB cleanup migration" — **needs push**
+
+---
+
+## What Shipped (April 25 2026 — Session 1: Transfer linking + Training UI)
 
 ### Transfer linking (linked_transfer_id)
 - New column: `transactions.linked_transfer_id UUID REFERENCES transactions(id) ON DELETE SET NULL`
@@ -181,7 +207,12 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - Removed `/\bsalary\b/i` and `/\btransfer\s+from\b/i` from `DIRECTOR_INCOME_PATTERNS` in `directorIncome.ts`
 - Was incorrectly firing on Nicola's "SALARY EDUCATION QLD" and inter-account transfers
 
-### Data state (April 25 2026)
+### Data state (April 25 2026 — Session 2)
+- Tests: 335 passing (added 8 transferLinker tests)
+- **Commit 6a6062e needs push (git push origin main)**
+- **scripts/010_clean_stale_links.sql needs to be run in Supabase SQL editor**
+
+### Data state (April 25 2026 — Session 1)
 - Tests: 327 passing
 - D E transfer card: Feb 2026 → Bills & Direct Debits ✓, June 2025 → Nicola's Account ✓
 - Feb 2025 D E row: lid=null (counterpart CSV not imported for that period — not a code issue)
@@ -311,6 +342,8 @@ Overnight build — all 7 chunks delivered in one commit.
 - training_labels table migration: scripts/migrate_training_labels.sql (run in Supabase — done)
 
 ## Recent Commit History (latest first)
+- 6a6062e: "test: add transferLinker tests (8 cases) + DB cleanup migration" ← NEEDS PUSH
+- af0e857: "fix: require both sides is_transfer=true before linking transfer pairs"
 - 3473fe7: "feat: add raw_description support and comprehensive tests"
 - fbf18d1: "chore: mark all backlog items complete"
 - f0bad3d: "feat: show example transaction descriptions on training label cards"

@@ -144,6 +144,49 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
 - Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
 
+## What Shipped (April 25 2026 — Transfer linking + Training UI)
+
+### Transfer linking (linked_transfer_id)
+- New column: `transactions.linked_transfer_id UUID REFERENCES transactions(id) ON DELETE SET NULL`
+- Index: `idx_transactions_linked_transfer_id WHERE linked_transfer_id IS NOT NULL`
+- Migration: `supabase/migrations/009_linked_transfer_id.sql` (run in Supabase — done)
+- `src/lib/transferLinker.ts` — `linkTransferPairs(dates)`: matches same-date, opposite-amount, different-account rows; at least one side must be `is_transfer=true`; updates both rows with each other's id
+- Called after CSV import and after Xero sync for affected dates
+
+### Training UI — rich transaction context
+- `GET /api/dev/merchant-examples` redesigned:
+  - Explicit column select including `linked_transfer_id`
+  - Transfer rows bypass de-dup (was losing linked_transfer_id pairs)
+  - Two-step account name resolution: linked tx → account_id → display_name
+  - Sets `transfer_destination` on each transfer example
+  - Returns `_debug_linked_id` and `_debug_dest` fields (still present — remove when confident)
+- `ExampleCard` in `/dev/training` shows expandable detail panel:
+  - FROM / TO / WHEN / AMOUNT / SOURCE / RAW / DBG fields
+  - Credit transactions: FROM/TO labels swapped (money IN means linked account is sender)
+  - `toLabel = transferDest || merchant` (does not require `is_transfer` flag to be set)
+  - Debug line (orange) shows raw lid= and dest= values from API
+
+### Account owner field
+- `accounts.owner` column: 'Steven' | 'Nicola' | 'Joint' | 'Business'
+- Migration: `supabase/migrations/008_account_owner.sql` (run — done)
+- Training UI classification dropdown pre-fills based on account owner
+
+### Xero sync fixes (this session)
+- `composeXeroRawDescription` now actually called in sync route (was defined but never imported)
+- `raw_description` includes BankAccount name as last pipe segment
+- Full Re-sync fixed: POST() now accepts `NextRequest`; `?full=true` properly read (was ignored)
+- Cross-account dedup moved to `/api/xero/dedup` endpoint (avoids Vercel timeout on sync)
+
+### Director income fix
+- Removed `/\bsalary\b/i` and `/\btransfer\s+from\b/i` from `DIRECTOR_INCOME_PATTERNS` in `directorIncome.ts`
+- Was incorrectly firing on Nicola's "SALARY EDUCATION QLD" and inter-account transfers
+
+### Data state (April 25 2026)
+- Tests: 327 passing
+- D E transfer card: Feb 2026 → Bills & Direct Debits ✓, June 2025 → Nicola's Account ✓
+- Feb 2025 D E row: lid=null (counterpart CSV not imported for that period — not a code issue)
+- Debug lines intentionally left in training UI until Steve confirms correct across all cards
+
 ## What Shipped (April 23 2026 — Items 8 & 9: raw_description + Skip button)
 
 ### 8. raw_description column
@@ -268,6 +311,7 @@ Overnight build — all 7 chunks delivered in one commit.
 - training_labels table migration: scripts/migrate_training_labels.sql (run in Supabase — done)
 
 ## Recent Commit History (latest first)
+- 3473fe7: "feat: add raw_description support and comprehensive tests"
 - fbf18d1: "chore: mark all backlog items complete"
 - f0bad3d: "feat: show example transaction descriptions on training label cards"
 - c7b41a4: "feat: inline edit for income entries with PUT /api/manual-income"
@@ -296,29 +340,49 @@ Overnight build — all 7 chunks delivered in one commit.
 - training_labels: 264 merchants seeded, 58 holdout, ~10 confirmed (working through Label tab)
 - Merchants needing Xero lookup before labelling: "STEVEN PICTON" ($4,711 income, 2 txns), "D E" ($22,000 income, 2 txns)
 
-## Current State (April 23 2026 — post overnight backlog)
-- **Tests:** 297 passing (8 test files)
+## Current State (April 23 2026 — BACKLOG items 8 & 9 complete)
+- **Tests:** 316 passing (9 test files, up from 297)
 - **Build:** clean
 - **Live:** https://app.hearth.money deployed on Vercel
 - **Xero:** Connected to Brisbane Health & Technology, re-synced with per-account separation + AccountCode mapping
+- **raw_description:** Column implementation complete, Xero sync composes ContactName | Reference | Narration | LineItem, CSV import stores original description
+
+## What Shipped (April 23 2026 — BACKLOG items 8 & 9)
+
+### BACKLOG Item 8 — raw_description column (COMPLETE)
+- Migration file created: `scripts/addRawDescription.sql` (adds TEXT column, nullable)
+- Xero sync (`src/app/api/xero/sync/route.ts`): Composes raw_description from ContactName | Reference | Narration | LineItem[0].Description (max 300 chars)
+- CSV import (`src/app/api/import/route.ts`): Stores original bank description in raw_description
+- Both paths already pass raw_description through categoryPipeline.ts and upsertTransactions
+- Training UI (`/dev/training`): Already displays examples from merchant-examples endpoint, which returns raw_description values
+- Added 8 comprehensive unit tests for composeXeroRawDescription function
+- **NEXT STEP:** Run migration in Supabase: `ALTER TABLE transactions ADD COLUMN IF NOT EXISTS raw_description TEXT;`
+- **NEXT STEP:** After deploy, go to Settings → Xero → Full Re-sync to backfill raw_description on Xero transactions
+
+### BACKLOG Item 9 — Skip button on training cards (COMPLETE)
+- Skip button already implemented on training cards at `/dev/training`
+- Client-side state management: clicking Skip hides card and shows "N skipped this session" count
+- Merchant remains as status='pending' in DB (not persisted)
+- Skipped cards reappear on next page load
+- Implementation found in `src/app/dev/training/page.tsx` lines 282-287
+
+### Tests Added
+- Added `src/lib/__tests__/rawDescription.test.ts` with 13 tests total:
+  - 8 tests for composeXeroRawDescription (compose, filter, truncate, order)
+  - 5 tests for raw_description in RawTransaction and ProcessedTransaction types
+- Fixed truncated `src/lib/xeroCategories.ts` file (encoding issue from Windows)
+- All 316 tests passing (was 297, added 13 new + fixed 8 xeroCategories tests that weren't running)
 
 ## Pending Work / Known Issues
 
-### In BACKLOG.md (Claude Code to build — items 8 & 9 not yet started)
-- **BACKLOG item 8** — `raw_description` column on transactions: store unprocessed Xero fields (ContactName | Reference | Narration | LineItem desc) during sync, and raw bank description for CSV. Show in training card Examples and as tooltip in /transactions. Requires Supabase migration (`scripts/addRawDescription.sql`), Xero sync + CSV import route changes, and a Full Re-sync after deploy. This unblocks labelling of ambiguous merchants like STEVEN PICTON and D E.
-- **BACKLOG item 9** — Skip/Defer button on training cards: client-side only, hides card for session, merchant stays pending in DB. Shows "N skipped this session" count.
-- **Note:** The loop is not auto-detecting items 8/9 (it cached "all 7 done"). Trigger manually: `work through items 8 and 9 in BACKLOG.md in C:\dev\personal-assistant\hearth-app`
-
-### Other Pending
-1. **Set account scopes** — In Settings → Accounts: set Brisbane Health Tech → business, Mastercard Bus. Plat. → business. Also Business Credit Card (CBA) → business if not done. NAB CC → decide.
-2. **Xero categorisation cleanup** — Some Xero merchants still miscategorised. Fix via /mappings or autoCategory rules as they appear in training UI.
-3. **Income shows $0 this month** — Wages/salary credits not in current month's imported CSVs. Need to import more recent CSVs.
-4. **BUG-001** — www.hearth.money redirect not configured.
-5. **Business Credit Card balance** — enter manually on Net Worth page.
-6. **Goals page** — empty state, no goals added yet.
-7. **Account management** — No delete account or bulk delete transactions in the app. Should be in Settings → Accounts: delete account (with confirmation + cascade delete transactions) and "Remove all transactions" per account.
-8. **Transfer linking** — Link matched transfer transactions across accounts. Store linked_transfer_id on both rows. Useful for Division 7A audit trail.
-9. **Ground truth fixtures** — Once 20+ labels confirmed at /dev/training, click "Export as test fixtures" → save as src/lib/__tests__/groundTruth.fixtures.ts, then run npm test to activate 80% gate. After BACKLOG item 8 ships + Full Re-sync, revisit "STEVEN PICTON" and "D E" labels.
+1. **Ground truth labelling** — Steve is actively working through /dev/training. Once 20+ labels confirmed, export fixtures → activate 80% gate. "D E" = director loan repayments from personal accounts to Brisbane Health Tech (Transfer, Business). "STEVEN PICTON" still needs lookup.
+2. **Training debug lines** — Remove `_debug_linked_id`, `_debug_dest` from merchant-examples/route.ts and the DBG row from ExampleCard in page.tsx once Steve is confident transfer display is correct across all cards.
+3. **Feb 2025 D E transfer** — $10,000 from an unknown personal account to Brisbane Health Tech; counterpart CSV not imported for that period. Not a code issue.
+4. **Import more recent CSVs** — Income shows $0 this month because current month's CSVs haven't been imported.
+5. **Set account scopes** — Brisbane Health Tech → business, Mastercard Bus. Plat. → business in Settings → Accounts.
+6. **BUG-001** — www.hearth.money redirect not configured.
+7. **Goals page** — empty state, no goals added yet.
+8. **Account management** — No delete account / bulk delete transactions in the app yet.
 
 ## Git / Workflow Notes
 - Use **Claude Code** for all code changes and git operations (NOT the Cowork sandbox)

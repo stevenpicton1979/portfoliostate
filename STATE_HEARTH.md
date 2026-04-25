@@ -124,7 +124,7 @@ Net worth page shows "balance not available" for accounts with null current_bala
 - `npm test` — run all tests
 - `npm run test:watch` — watch mode
 - `npm run test:coverage` — coverage report
-- **335 tests passing** across 10 test files in src/lib/__tests__/:
+- **351 tests passing** across 11 test files in src/lib/__tests__/:
   - csvParser.test.ts — import layer
   - cleanMerchant.test.ts — merchant name cleaning
   - transferPatterns.test.ts — transfer detection
@@ -134,6 +134,7 @@ Net worth page shows "balance not available" for accounts with null current_bala
   - rawDescription.test.ts — composeXeroRawDescription + type tests
   - categorisationEdgeCases.test.ts — edge cases
   - transferLinker.test.ts — 8 tests: happy path, one-sided is_transfer regression, same account, amount mismatch, date mismatch, no re-link in same run, bidirectional linking, correct pair count
+  - transactionExampleFormatting.test.ts — 16 tests: FROM/TO label logic for credits/debits with/without transferDest, de-dup key behaviour
   - groundTruth.fixtures.ts — placeholder (regenerate from /dev/training → Export)
   - groundTruth.test.ts — 80% accuracy gate (vacuously passes until fixtures populated)
 
@@ -146,6 +147,24 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 - `tsconfig.json` has a low `target` — Set and Map iteration with `for...of` fails at build time.
 - Fix: use `Array.from(set)` / `Array.from(map.entries())` instead of direct iteration.
 - Set: `new Set(prev); next.add(x)` not `new Set([...prev, x])`
+
+## What Shipped (April 25 2026 — Session 3: Training page FROM/TO bug fixes)
+
+### Bug fixes — ExampleCard and merchant-examples API
+- **BUG 1 fixed** (`src/app/dev/training/page.tsx`): Credits always swap FROM/TO regardless of whether `transfer_destination` is resolved. Previous logic only swapped when `transferDest` was non-null; unlinked credits showed FROM=account, TO=merchant — the opposite of correct. Fix: `fromLabel = isCredit ? (transferDest ?? merchant) : account`
+- **BUG 2 fixed** (`src/app/api/dev/merchant-examples/route.ts`): De-dup key changed from `description` alone to `description|amount`. A $10k transfer with the same description as a $5k income row was being collapsed to one example — now both are shown as distinct.
+- **Debug output removed**: All `console.log` statements removed from `merchant-examples/route.ts`; DBG row removed from `ExampleCard`
+
+### New tests
+- `src/lib/__tests__/transactionExampleFormatting.test.ts` — 16 tests:
+  - Label logic: credits always show FROM=sender, TO=receiver with and without `transferDest`
+  - De-dup: same description + different amount kept; same description + same amount collapsed; transfer rows always bypass; cap at 5
+- **351 tests passing** (was 335; 16 new added this session)
+
+### Commit
+- `23a0f6f` — "fix: correct credit FROM/TO labels and transfer de-dup in training page" — **pushed**
+
+---
 
 ## What Shipped (April 25 2026 — Session 2: transferLinker tests + stale link cleanup)
 
@@ -209,8 +228,8 @@ Mortgage, Utilities, Charity, Pets, Personal Care, Business, Government & Tax
 
 ### Data state (April 25 2026 — Session 2)
 - Tests: 335 passing (added 8 transferLinker tests)
-- **Commit 6a6062e needs push (git push origin main)**
-- **scripts/010_clean_stale_links.sql needs to be run in Supabase SQL editor**
+- Commits pushed: 6a6062e + f8b8bed (ESLint fix for no-unused-vars in test file)
+- scripts/010_clean_stale_links.sql — **RUN CONFIRMED** in Supabase SQL editor (SUCCESS, no rows returned)
 
 ### Data state (April 25 2026 — Session 1)
 - Tests: 327 passing
@@ -342,7 +361,9 @@ Overnight build — all 7 chunks delivered in one commit.
 - training_labels table migration: scripts/migrate_training_labels.sql (run in Supabase — done)
 
 ## Recent Commit History (latest first)
-- 6a6062e: "test: add transferLinker tests (8 cases) + DB cleanup migration" ← NEEDS PUSH
+- 23a0f6f: "fix: correct credit FROM/TO labels and transfer de-dup in training page"
+- f8b8bed: "fix: remove unused param names in transferLinker mock to satisfy ESLint no-unused-vars"
+- 6a6062e: "test: add transferLinker tests (8 cases) + DB cleanup migration"
 - af0e857: "fix: require both sides is_transfer=true before linking transfer pairs"
 - 3473fe7: "feat: add raw_description support and comprehensive tests"
 - fbf18d1: "chore: mark all backlog items complete"
@@ -409,13 +430,12 @@ Overnight build — all 7 chunks delivered in one commit.
 ## Pending Work / Known Issues
 
 1. **Ground truth labelling** — Steve is actively working through /dev/training. Once 20+ labels confirmed, export fixtures → activate 80% gate. "D E" = director loan repayments from personal accounts to Brisbane Health Tech (Transfer, Business). "STEVEN PICTON" still needs lookup.
-2. **Training debug lines** — Remove `_debug_linked_id`, `_debug_dest` from merchant-examples/route.ts and the DBG row from ExampleCard in page.tsx once Steve is confident transfer display is correct across all cards.
-3. **Feb 2025 D E transfer** — $10,000 from an unknown personal account to Brisbane Health Tech; counterpart CSV not imported for that period. Not a code issue.
-4. **Import more recent CSVs** — Income shows $0 this month because current month's CSVs haven't been imported.
-5. **Set account scopes** — Brisbane Health Tech → business, Mastercard Bus. Plat. → business in Settings → Accounts.
-6. **BUG-001** — www.hearth.money redirect not configured.
-7. **Goals page** — empty state, no goals added yet.
-8. **Account management** — No delete account / bulk delete transactions in the app yet.
+2. **Feb 2025 D E transfer** — $10,000 from an unknown personal account to Brisbane Health Tech; counterpart CSV not imported for that period. Not a code issue — row now displays correctly with merchant as FROM fallback.
+3. **Import more recent CSVs** — Income shows $0 this month because current month's CSVs haven't been imported.
+4. **Set account scopes** — Brisbane Health Tech → business, Mastercard Bus. Plat. → business in Settings → Accounts.
+5. **BUG-001** — www.hearth.money redirect not configured.
+6. **Goals page** — empty state, no goals added yet.
+7. **Account management** — No delete account / bulk delete transactions in the app yet.
 
 ## Git / Workflow Notes
 - Use **Claude Code** for all code changes and git operations (NOT the Cowork sandbox)

@@ -64,7 +64,7 @@ Category is ALWAYS the leaf node — never the realm. `owner` already encodes th
 
 #### New dev pages (done ✅)
 - `/dev/reconcile` — Xero data reconciliation report (⚠️ DB count bug: Task 14)
-- `/dev/coverage` — Transaction coverage inspector (⚠️ no search: Task 15)
+- `/dev/coverage` — Transaction coverage inspector (fully updated, see Task 15 below)
 
 #### Previously completed (prior session)
 - Named merchant rules engine, `matched_rule` column, `/dev/rules` page
@@ -134,12 +134,26 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 - Business accounts: `institution = 'Xero'` OR `scope = 'business'`
 - Personal accounts: `scope = 'household'`, CSV only
 
+### Task 15 — Coverage inspector three-state match status + search (done ✅)
+- `MatchStatus` type: `'rule' | 'gl' | 'unmatched'`
+  - `'rule'` — a named rule fired (`matched_rule` non-null)
+  - `'gl'` — no named rule, but Xero GL hint provided the category (`gl_account` non-null)
+  - `'unmatched'` — no rule, no GL hint — genuine gap needing attention
+- `buildCoverageRows` in `coverageReport.ts` computes `matchStatus` per merchant
+- API route accepts `status=rule|gl|unmatched`; `unmatched=true` kept as backwards-compatible alias
+- UI: checkbox → segmented control (All / Rule / GL / Unmatched); default view = Unmatched
+- Three-count summary: "X rule matched, Y GL covered, Z unmatched"
+- Colour-coded `MatchStatusBadge` per state
+- Merchant name search input — client-side, real-time, case-insensitive
+- 7 new matchStatus tests in coverageReport.test.ts, 2 new status-filter tests in coverageRoute.test.ts
+- 608 tests passing after this task
+
 ## Outstanding backlog items
 - **Task 14**: Fix reconciliation page — DB count = 0 for most accounts
-- **Task 15**: Coverage inspector — add merchant name search/filter
-- **Next productive session**: Work through 297 unmatched merchants in `/dev/coverage` (Unmatched Only), add named rules for top merchants by transaction count. Decision framework: named rule if you want to assert the category regardless of Xero GL; trust GL hint if Xero's per-transaction coding is reliable (e.g. Amazon AU Retail → Office Expenses via GL).
+- **Task 18**: Outcome bucket grouping — wire taxonomy into spending and reporting views
+- **Next productive session**: Use `/dev/coverage` Unmatched view (now showing only genuine gaps) to work through top unmatched merchants by transaction count and add named rules. Decision framework: named rule to assert category regardless of Xero GL; trust GL hint when Xero per-transaction coding is reliable.
 
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | All pushed
-- 599 tests passing
+- 608 tests passing
 - Production: https://app.hearth.money

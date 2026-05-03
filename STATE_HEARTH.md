@@ -225,22 +225,59 @@ TFAP PTY LTD (4), TEJGON PTY LTD (3), H C KALYAN PTY LTD (2), TEAM COOPS PTY LTD
 - Existing `/dev/buckets` page kept as the deep-dive view.
 - 768 tests passing after this work
 
+### Subscriptions inventory rebuild (done ✅, session 4)
+Full rebuild of `/subscriptions` from a simple triage queue into a real subscription inventory:
+
+**Architecture:**
+- Three-tab primary layout: **My Subscriptions** / **Detected Candidates** / **Dismissed**
+- Secondary collapsible "More analysis" section: Lapsed / Duplicates / Timeline tabs
+- Optimistic UI state — confirmedSet/dismissedSet update immediately, API calls happen async
+
+**My Subscriptions tab:**
+- Shows all merchants with `classification='Subscription'` in merchant_mappings
+- Each row shows frequency, account, amount, annual cost, last/next dates
+- Expand → lazy-loaded metadata form + transaction drill-down
+- Confirmed subscriptions that are no longer detected show "No recent transactions" badge
+
+**Detected Candidates tab:**
+- Shows detected subscriptions not yet confirmed or dismissed
+- Each row has "Add to my subscriptions" and "Not a subscription" buttons
+- Expand → transaction drill-down (no metadata form until confirmed)
+
+**Dismissed tab:**
+- Shows dismissed merchants with "Bring Back" button (DELETE /api/mappings removes the row)
+
+**New files:**
+- `scripts/addSubscriptionMetadata.sql` — DB migration for `subscription_metadata` table (composite PK: `merchant + household_id`). **⚠️ Must run in Supabase before deploying.**
+- `src/lib/subscriptionStatus.ts` — pure `categoriseSubscriptionStatus(merchant, mappings)` function
+- `src/app/api/subscriptions/metadata/route.ts` — GET (returns saved metadata) + PUT (upserts; validates merchant is classified as Subscription)
+- `src/app/api/subscriptions/transactions/route.ts` — GET transactions for a merchant with account display_name join
+
+**subscription_metadata table columns:** `merchant, household_id, cancellation_url, account_email, notes, auto_renews (bool, default true), next_renewal_override (date), category, created_at, updated_at`
+
+**Tests:** 28 new tests across 3 test files (subscriptionStatus × 7, subscriptionMetadataRoute × 11, subscriptionTransactionsRoute × 6 + status ones)
+
+**Commit:** `857e24d` — 800 tests passing
+
 ## Outstanding backlog items
+- **⚠️ DB migration needed before next deploy:** Run `scripts/addSubscriptionMetadata.sql` in Supabase SQL editor to create `subscription_metadata` table
 - **Next session deploy steps**:
-  1. From Windows Git Bash (NOT sandbox — git lock issue): `git add -A && git commit -m "feat: batch 4 rules + outcome buckets in /spending and dashboard" && git push`
-  2. Wait for Vercel deploy
-  3. `curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"` to re-apply rules
-  4. Check `/dev/coverage` to confirm unmatched count drops from 15 → ~6
-  5. Visit `/spending` and `/` (dashboard) to verify the new bucket UI renders
+  1. Run Supabase migration: `scripts/addSubscriptionMetadata.sql`
+  2. `git push` from Windows Git Bash
+  3. Wait for Vercel deploy
+  4. `curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"` to re-apply rules (for batch 4 + personal rules from session 3)
+  5. Check `/subscriptions` page renders correctly with the new 3-tab UI
+  6. Check `/dev/coverage` to confirm unmatched count ≈ 6
+  7. Visit `/spending` and `/` (dashboard) to verify bucket UI renders
 - **Future**: Manual `/mappings` pass for the 6 remaining truly-ambiguous PTY LTDs as transactions accumulate
 - **Operational notes**:
   - git lock file (`index.lock`) keeps appearing in Linux sandbox — always commit from Windows Git Bash, not the sandbox
   - Edit/Write tools corrupt files (silent truncation + occasional null bytes) — always use bash + python heredoc + verify with `python3 -c "open(f,'rb').read().count(b'\x00')"` before commit. Truncation can also remove existing content, so always check `git diff --stat` after edits and confirm no unexpected line losses.
 
 ## Git state
-- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | **UNCOMMITTED** changes pending Steven's manual commit/push
-- HEAD: `c51c454` (batch 4 + outcome buckets, pushed mid-session-3)
-- 772 tests passing (28 new this session: 16 batch-4 rule tests + 8 bucket aggregation tests + 4 coverage regression tests)
+- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | committed, **push pending** (Steven's manual push)
+- HEAD: `857e24d` (subscriptions inventory rebuild)
+- 800 tests passing (28 new this session: 7 subscriptionStatus + 11 subscriptionMetadata route + 6 subscriptionTransactions route + several from session-3 items already counted)
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

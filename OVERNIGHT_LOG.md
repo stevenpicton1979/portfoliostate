@@ -163,3 +163,23 @@ Tasks in priority order:
 - T2.7: Soft email gate
 - CS.1-CS.8: Continuity safeguards (schema fixtures, smoke tests, DECISIONS.md D8, Brisbane validation test)
 
+
+---
+## Session — 2026-05-03 (Hearth batch 3 rules)
+
+**Commits pushed:** 9ec59db (batch 3, 44 rules), 6372b2e (batch 3 supplement, 19 rules)
+**State updated:** a9bad87 (portfoliostate)
+
+**Work completed:**
+- Continued from previous session where batch 2 (f440220) had just deployed successfully
+- Ran reprocess-csv against 852 CSV transactions — applied batch 2 rules → 101 unmatched merchants
+- **Batch 3** (9ec59db): 44 new named rules covering fuel (Freedom Fuels, Shell Coles Express, BP, Ampol), retail (Kmart, Bunnings, TK Maxx, Spotlight, Super Cheap Auto, The Trail Co, Reebelo), entertainment (Event Cinemas, Birch Carroll, Tatts Online, Plaster Fun House), healthcare (Specsavers, Burst Health, Scope Psychology, QLD X-Ray, Mater Misericordiae, MH Carindale), personal care (Zen Hair Skin & Body), health/fitness (Gold Coast Aquatics, Diving QLD), transport (Secure Parking), travel (Booking.com Hotel), eating out (Liquorland, Hurrikane, Bloom Salad, Bloom Canteen, Bar Merlo, Blackbird Bar, Hana Sushi, Curryville, Red Galanga, Mr Edwards Alehouse, Brooklyn Standard, SQ* catch-all, ZLR* catch-all), food & groceries (Bakers Delight), education (Dept Education QLD), income (Budget Direct rebate, MCARE Benefits)
+- New category 'Personal Care' added to categories.ts taxonomy
+- **Batch 3 supplement** (6372b2e): 19 more rules — Etsy, 2XU, Fast Times, The Lush Lily, LS Link Vision, Andy's Bakery, Kenrose Bakery, Just Bun, Nextra, Punch Espresso, Jimmys, Tomcat Bar, Satay Boss, Thai Antique, Sitar, The Archive, Bellissimo Coffee, Food Odyssey, LS* cafe catch-all
+- Ran reprocess-csv again after each deploy
+- **Coverage: 101 → 35 → 15 unmatched merchants**
+- 744 tests passing (168 in merchantCategoryRules.test.ts)
+
+**Remaining unmatched (15):** TFAP PTY LTD (4), TEJGON PTY LTD (3), H C KALYAN PTY LTD (2), MOMENTUM (2), TEAM COOPS PTY LTD (2), HIRA BHANA & SONS (1), NORTH BURLEIGH SURF LI (1), ANNUAL FEE (1), RIVER CITY CORPORATI (1), INTEREST ON CASH ADV (1), HANAICHI PTY LTD (1), CBA OTHER CASH ADV FEE (1), CRISPONCREEK (1), LASHAND INVESTMENTS (1), BRINCO2005 PTY LTD (1)
+
+**Known issue:** git index.lock appears in Linux sandbox — ALWAYS commit from Windows Git Bash, never from the sandbox

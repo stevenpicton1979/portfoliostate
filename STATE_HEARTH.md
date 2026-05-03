@@ -1,5 +1,5 @@
 # Hearth App — Session State
-_Last updated: 2026-05-02 (session 2)_
+_Last updated: 2026-05-03 (session 3)_
 
 ## What Hearth is
 Personal finance app (Next.js 14 + Supabase + Xero). Tracks household transactions, categorises them, links to Xero for business bank feed. Business transactions come exclusively from Xero. Personal transactions come from CSV bank extracts only. No overlap.
@@ -188,4 +188,89 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 
 ### Named rules — batch 2 (done ✅)
 25 rules: ALDI, Woolworths, Coles, IGA, The Source, Hanaro Trading, Little Genovese, GYG, KFC, McDonald's, Old Mr Rabbit, Asian Delights, RiverCity Catering, Dicky Beach Seafood, Carina Medical Specialists, Metropol Pharmacy, Medibank Private, Carindale Vet, Target, Myer, The Reject Shop, Hubbl/Binge, Mater Lotteries, CommBank internal transfer.
-Deployed: `f440220` (after fixing null byte c
+Deployed: `f440220` (after fixing null byte corruption from batch 2 commit — see git notes).
+
+### Named rules — batch 3 + supplement (done ✅)
+63 new rules across two commits (`9ec59db`, `6372b2e`):
+- **Fuel**: Freedom Fuels, Shell Coles Express, BP, Ampol → Transport
+- **Retail**: Kmart, Bunnings, TK Maxx, Spotlight, Super Cheap Auto, The Trail Co, Reebelo, Carindale Mega, Etsy, 2XU, Fast Times, The Lush Lily → Shopping
+- **Entertainment**: Event Cinemas, Birch Carroll, Tatts Online, Plaster Fun House → Entertainment
+- **Healthcare**: Specsavers, Burst Health, Scope Psychology, Queensland X-Ray, Mater Misericordiae, MH Carindale, LS Link Vision → Healthcare
+- **Personal Care**: Zen Hair Skin & Body → Personal Care _(new category added to `categories.ts`)_
+- **Health & Fitness**: Gold Coast Aquatics, Diving Queensland → Health & Fitness
+- **Transport**: Secure Parking → Transport
+- **Travel**: Hotel at Booking.com → Travel
+- **Eating Out**: Liquorland, Hurrikane, Bloom Salad, Bloom Canteen, Bar Merlo, Blackbird Bar, Hana Sushi, Curryville, Red Galanga, Mr Edwards Alehouse, Brooklyn Standard, Punch Espresso, Jimmys, Tomcat Bar, Satay Boss, Thai Antique, Sitar, The Archive, Bellissimo Coffee, Food Odyssey → Eating Out
+- **Catch-alls**: `sq_eating_out` (Square terminal SQ*), `zlr_eating_out` (Zeller terminal ZLR*), `ls_eating_out` (Lightspeed LS prefix cafes)
+- **Food & Groceries**: Bakers Delight, Andy's Bakery, Kenrose Bakery, Just Bun, Nextra → Food & Groceries
+- **Education**: Department of Education QLD → Education
+- **Income**: Budget Direct rebate → Insurance/income; MCARE Benefits → Healthcare/income
+Coverage after reprocess (end of session 2): **101 → 15 unmatched** (852 CSV transactions)
+
+### Named rules — batch 4 (done ✅, session 3)
+9 rules covering bank fees, utilities, and confirmed local PTY LTDs:
+- **Bank Fees** _(new category in `categories.ts`)_: `cba_annual_fee` (anchored `^annual fee$`), `cba_interest_cash_adv`, `cba_cash_adv_fee` (matches "cash adv fee"). All Joint, isSubscription: false.
+- **Utilities**: `momentum_energy` ("MOMENTUM" / "MOMENTUM ENERGY") → Utilities, Joint
+- **Eating Out**: `crisp_on_creek`, `north_burleigh_surf_club`, `hanaichi_sushi`, `hira_bhana_sons`, `river_city_corporation` → Eating Out, Joint
+- 16 new rule tests added; 2 new intentional fingerprint collisions (Bank Fees/Joint, Utilities/Joint)
+- 760 tests passing after Batch 4
+
+### Remaining unmatched (6) — too ambiguous, deferred
+TFAP PTY LTD (4), TEJGON PTY LTD (3), H C KALYAN PTY LTD (2), TEAM COOPS PTY LTD (2), LASHAND INVESTMENTS (1), BRINCO2005 PTY LTD (1). Steven did not have context for these — to be classified manually via `/mappings` UI when transactions accumulate. _(Was 15 unmatched at start of session 3 — Batch 4 cleared the bank fees, MOMENTUM, and 5 confirmed local merchants.)_
+
+### Task 18 Steps 3–4 — outcome buckets wired into main UI (done ✅, session 3)
+- New `src/lib/bucketAggregation.ts` — `aggregateBuckets()` (groups txns by outcome bucket, skips transfers) + `summariseByRealm()` (rolls up to realm × direction). Pure functions, fully unit tested (8 tests).
+- **`/spending`** now renders a hierarchical "Spending by Outcome Bucket" tree below the existing month/category summary. New client component: `src/app/spending/SpendingBuckets.tsx`. Scoped to household-personal accounts (matches existing /spending filter).
+- **`/dashboard`** now renders an "Outcome Buckets" card showing per-realm Income vs Expenses + net for the current month, across all accounts (business + household). New server component: `src/app/dashboard/OutcomeBucketsCard.tsx`. Card includes a "Detail" link to `/dev/buckets` for the full hierarchical view.
+- Existing `/dev/buckets` page kept as the deep-dive view.
+- 768 tests passing after this work
+
+## Outstanding backlog items
+- **Next session deploy steps**:
+  1. From Windows Git Bash (NOT sandbox — git lock issue): `git add -A && git commit -m "feat: batch 4 rules + outcome buckets in /spending and dashboard" && git push`
+  2. Wait for Vercel deploy
+  3. `curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"` to re-apply rules
+  4. Check `/dev/coverage` to confirm unmatched count drops from 15 → ~6
+  5. Visit `/spending` and `/` (dashboard) to verify the new bucket UI renders
+- **Future**: Manual `/mappings` pass for the 6 remaining truly-ambiguous PTY LTDs as transactions accumulate
+- **Operational notes**:
+  - git lock file (`index.lock`) keeps appearing in Linux sandbox — always commit from Windows Git Bash, not the sandbox
+  - Edit/Write tools corrupt files (silent truncation + occasional null bytes) — always use bash + python heredoc + verify with `python3 -c "open(f,'rb').read().count(b'\x00')"` before commit. Truncation can also remove existing content, so always check `git diff --stat` after edits and confirm no unexpected line losses.
+
+## Git state
+- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | **UNCOMMITTED** changes pending Steven's manual commit/push
+- HEAD: `c51c454` (batch 4 + outcome buckets, pushed mid-session-3)
+- 772 tests passing (28 new this session: 16 batch-4 rule tests + 8 bucket aggregation tests + 4 coverage regression tests)
+- Production: https://app.hearth.money
+
+## Files changed this session (session 3)
+**Modified:**
+- `BACKLOG.md` — Tasks 10–17 marked `[x]` (housekeeping; they were shipped in session 2 but not checkbox-updated)
+- `src/lib/categories.ts` — added 'Bank Fees' to CATEGORIES
+- `src/lib/merchantCategoryRules.ts` — added 9 Batch 4 rules
+- `src/lib/__tests__/merchantCategoryRules.test.ts` — added 16 tests + 2 intentional collisions
+- `src/app/spending/page.tsx` — fetches bucket data + renders SpendingBuckets
+- `src/app/dashboard/page.tsx` — fetches bucket data + renders OutcomeBucketsCard
+
+**Added:**
+- `src/lib/bucketAggregation.ts` — pure aggregation helpers (aggregateBuckets, summariseByRealm)
+- `src/lib/__tests__/bucketAggregation.test.ts` — 8 tests
+- `src/app/spending/SpendingBuckets.tsx` — hierarchical tree client component
+- `src/app/dashboard/OutcomeBucketsCard.tsx` — realm-summary card server component
+
+### Coverage regression test (done ✅, session 3 follow-up)
+After Steven asked "why didn't the tests catch this?", added a snapshot test that runs the rule pipeline against a fixture of real merchant strings and asserts unmatched ⊆ EXPECTED_UNMATCHED. Catches:
+- Regex mismatches against real production strings (the unit tests use synthetic input)
+- Rule ordering bugs (an earlier catch-all eating a later specific rule)
+- Coverage regressions when adding rules
+- Stale exemptions (merchant in EXPECTED_UNMATCHED but a rule now matches it)
+
+**Files:**
+- `src/lib/__tests__/coverageRegression.test.ts` — 4 tests (incl. one informational coverage stat reporter)
+- `src/lib/__tests__/fixtures/coverageMerchants.json` — hand-seeded with the 15 from /dev/coverage screenshot + 16 known-matched canaries; needs regeneration from production
+- `src/lib/__tests__/fixtures/README.md` — workflow + the SQL to regenerate
+- `scripts/generateCoverageFixture.ts` — automated regenerator (needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in env)
+
+**To make it really useful:** Steven should run `npx tsx scripts/generateCoverageFixture.ts` at some point to replace the hand-seeded fixture with the real production set. Until then the test catches regressions on the seeded sample only.
+
+**Result:** 772 tests passing (4 new). 25/31 fixture merchants matched, 6 in EXPECTED_UNMATCHED, 0 unexpectedly unmatched.

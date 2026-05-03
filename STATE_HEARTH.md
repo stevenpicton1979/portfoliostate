@@ -279,22 +279,6 @@ Full migration from merchant-string-keyed `subscription_metadata` to a proper re
 - Removed filter: Spotify, Xbox, Google One etc. (classified as `owner='Business'`) now correctly detected
 - **Commit:** `16a9801`
 
-## Outstanding backlog items
-- **⚠️ DB migrations needed before next deploy (run in order in Supabase SQL editor):**
-  1. `scripts/addSubscriptionsTables.sql` — creates `subscriptions` + `subscription_merchants` tables
-  2. `scripts/migrateSubscriptionsToTables.sql` — migrates existing subscription data from `merchant_mappings` + `subscription_metadata`
-  3. _(Also still needed if not yet run)_ `scripts/addSubscriptionMetadata.sql` — the old subscription_metadata table
-  4. `scripts/addCancelledColumns.sql` — adds `cancelled_at` + `auto_cancelled` to `subscriptions`
-- **Next session deploy steps**:
-  1. Run Supabase migrations 1–4 above (in order)
-  2. Push already done (`66c980d` on origin/main)
-  3. Wait for Vercel deploy
-  4. Check `/subscriptions` — 4 tabs; Cancelled tab shows archived subscriptions
-  5. Check `/dev/coverage` to confirm unmatched count ≈ 6
-- **Future**: Manual `/mappings` pass for the 6 remaining truly-ambiguous PTY LTDs as transactions accumulate
-- **Operational notes**:
-  - git lock file (`index.lock`) keeps appearing in Linux sandbox — always commit from Windows Git Bash, not the sandbox
-
 ### Subscription detection category bypass fix (done ✅, session 5 continued)
 Confirmed subscriptions whose merchant alias transactions had a category in `EXCLUDED_CATEGORIES` (e.g. 'Medical' for health insurance, 'Shopping' for subscription boxes) were silently filtered from detection, showing "No recent transactions" and $0 annual cost in the UI.
 
@@ -335,9 +319,7 @@ Full cancel/restore lifecycle with 4-tab UI:
 
 **Commit:** `66c980d` — 860 tests passing
 
-**⚠️ MIGRATION REQUIRED before deploy:** run `scripts/addCancelledColumns.sql` in Supabase SQL editor
-
-### Named rules — Batch 5: Streaming & SaaS (done ✅)
+### Named rules — Batch 5: Streaming & SaaS (done ✅, session 5 continued)
 13 rules covering streaming services and productivity SaaS on Steven's business card. Without a named rule these landed in "Eating Out" via Xero GL account 420 mapping. Named rules now fire first.
 
 **Entertainment (Business, isSubscription: true):**
@@ -353,7 +335,7 @@ Skipped (too ambiguous without diagnostic SQL): Stan
 
 **Commit:** `bf25d1a` — 902 tests passing
 
-### Dashboard upcoming subscriptions — relational model fix (done ✅)
+### Dashboard upcoming subscriptions — relational model fix (done ✅, session 5 continued)
 
 Three bugs fixed in the "Upcoming Subscriptions" dashboard widget:
 
@@ -373,34 +355,52 @@ Three bugs fixed in the "Upcoming Subscriptions" dashboard widget:
 - 908 tests passing
 - Production: https://app.hearth.money
 
-## Files changed this session (session 3)
-**Modified:**
-- `BACKLOG.md` — Tasks 10–17 marked `[x]` (housekeeping; they were shipped in session 2 but not checkbox-updated)
-- `src/lib/categories.ts` — added 'Bank Fees' to CATEGORIES
-- `src/lib/merchantCategoryRules.ts` — added 9 Batch 4 rules
-- `src/lib/__tests__/merchantCategoryRules.test.ts` — added 16 tests + 2 intentional collisions
-- `src/app/spending/page.tsx` — fetches bucket data + renders SpendingBuckets
-- `src/app/dashboard/page.tsx` — fetches bucket data + renders OutcomeBucketsCard
+## Outstanding & next steps
 
-**Added:**
-- `src/lib/bucketAggregation.ts` — pure aggregation helpers (aggregateBuckets, summariseByRealm)
-- `src/lib/__tests__/bucketAggregation.test.ts` — 8 tests
-- `src/app/spending/SpendingBuckets.tsx` — hierarchical tree client component
-- `src/app/dashboard/OutcomeBucketsCard.tsx` — realm-summary card server component
+**Migrations status:** All four required migrations have been documented in
+`scripts/`. As of `1fd3aa5` Steven has run them in production (otherwise the
+908-tests-passing dashboard fix wouldn't be visibly working). If a new
+session opens fresh, double-check by querying for the
+`subscription_merchants`, `subscriptions.cancelled_at`, and `Bank Fees`
+category presence before assuming.
 
-### Coverage regression test (done ✅, session 3 follow-up)
-After Steven asked "why didn't the tests catch this?", added a snapshot test that runs the rule pipeline against a fixture of real merchant strings and asserts unmatched ⊆ EXPECTED_UNMATCHED. Catches:
-- Regex mismatches against real production strings (the unit tests use synthetic input)
-- Rule ordering bugs (an earlier catch-all eating a later specific rule)
-- Coverage regressions when adding rules
-- Stale exemptions (merchant in EXPECTED_UNMATCHED but a rule now matches it)
+**Likely next work (open at end of session 5):**
+- Validate the dashboard widget in production: HCF Health Insurance shows
+  once with combined cadence, OCT-DEC 2025 no longer appears.
+- Run `npx tsx scripts/generateCoverageFixture.ts` to replace the
+  hand-seeded coverage fixture with the real production merchant set
+  (mentioned earlier as still pending; it would meaningfully strengthen
+  the regression test).
+- Surface "still charging despite cancellation" warnings: a cancelled
+  subscription whose merchants keep producing transactions should appear
+  somewhere visible (currently they fall back into Detected Candidates,
+  which is functional but not loud about the contradiction).
+- Auto-cancel automation and "renewals in 7 days" widget — both depend
+  on the relational model that's now in place. Greenfield work whenever
+  ready.
 
-**Files:**
-- `src/lib/__tests__/coverageRegression.test.ts` — 4 tests (incl. one informational coverage stat reporter)
-- `src/lib/__tests__/fixtures/coverageMerchants.json` — hand-seeded with the 15 from /dev/coverage screenshot + 16 known-matched canaries; needs regeneration from production
-- `src/lib/__tests__/fixtures/README.md` — workflow + the SQL to regenerate
-- `scripts/generateCoverageFixture.ts` — automated regenerator (needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in env)
+**Manual cleanup:** the 6 truly-ambiguous PTY LTDs (TFAP, TEJGON,
+H C KALYAN, TEAM COOPS, LASHAND, BRINCO2005) should be classified via
+`/mappings` UI as more transactions accumulate. They are currently in
+`EXPECTED_UNMATCHED` in `coverageRegression.test.ts`.
 
-**To make it really useful:** Steven should run `npx tsx scripts/generateCoverageFixture.ts` at some point to replace the hand-seeded fixture with the real production set. Until then the test catches regressions on the seeded sample only.
+## Operational notes (lessons accumulated through session 5)
 
-**Result:** 772 tests passing (4 new). 25/31 fixture merchants matched, 6 in EXPECTED_UNMATCHED, 0 unexpectedly unmatched.
+- **Git workflow:** commit + push from Windows Git Bash (`/c/dev/...` paths
+  with forward slashes — `\d`, `\p`, `\h` are escape sequences in Bash).
+  The Linux sandbox creates a stuck `.git/index.lock` that neither sandbox
+  nor PowerShell can delete; only Windows Git Bash can.
+- **Edit-tool corruption:** Cowork's Edit/Write file tools have repeatedly
+  truncated files mid-edit, including writing duplicate trailing content
+  that breaks the next Vercel build. Always verify with
+  `python3 -c "open(f,'rb').read().count(b'\x00')"` AND check
+  `git diff --stat` for unexpected line losses before committing. The
+  reconcileRoute.test.ts trailing-debris bug bit Vercel twice — worth
+  scanning all test files for parse errors before push.
+- **Claude Code workflow:** explicitly include `git push` AND
+  `git log origin/main --oneline -1` in every prompt — Claude Code has
+  twice committed locally without pushing, then claimed "done".
+- **Cowork vs Claude Code:** Cowork is best for verification, screenshots,
+  and design discussion. Claude Code is best for heavy code work because
+  it runs natively on Steven's filesystem (no sandbox/Windows divergence,
+  no Edit-tool corruption, native `npm test` and `next build`).

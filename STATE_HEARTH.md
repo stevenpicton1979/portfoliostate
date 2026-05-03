@@ -229,6 +229,16 @@ TFAP PTY LTD (4), TEJGON PTY LTD (3), H C KALYAN PTY LTD (2), TEAM COOPS PTY LTD
 Initial rebuild of `/subscriptions` — 3-tab UI, subscription_metadata table, metadata form, transaction drill-down.
 **Commit:** `857e24d` — 800 tests passing
 
+### Subscription detail panel follow-up (done ✅, session 5)
+Four UI gaps wired up in the My Subscriptions expand panel:
+1. **Editable name** — Name input at top of MetadataForm, saves via PUT /api/subscriptions/:id
+2. **Merchant alias chips with picker** — Chips with X buttons; clicking X on last alias shows inline warning. "+ Add alias" input uses `<datalist>` populated from new `GET /api/subscriptions/available-merchants` route (excludes already-linked + dismissed merchants). Removed aliases return to picker.
+3. **Available merchants route** — `GET /api/subscriptions/available-merchants` — distinct merchants from transactions, filtered against subscription_merchants and dismissed merchant_mappings, sorted alphabetically.
+4. **Merge modal** — "Merge with another subscription…" link at bottom of panel; modal lists other active subs; POST /api/subscriptions/merge on confirm; source row disappears, toast shows "Merged into <name>".
+
+Tests: 8 available-merchants route tests + 9 merge route tests (validation, merchant reassignment, duplicate skipping, notes append).
+**Commit:** `9a673b9` — 821 tests passing
+
 ### Subscriptions relational model (done ✅, session 5)
 Full migration from merchant-string-keyed `subscription_metadata` to a proper relational model:
 
@@ -287,8 +297,8 @@ Full migration from merchant-string-keyed `subscription_metadata` to a proper re
 
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `1884f61` (subscriptions relational model)
-- 804 tests passing
+- HEAD: `9a673b9` (subscription detail panel UI)
+- 821 tests passing
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

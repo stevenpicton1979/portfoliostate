@@ -1,5 +1,5 @@
 # Hearth App — Session State
-_Last updated: 2026-05-02_
+_Last updated: 2026-05-02 (session 2)_
 
 ## What Hearth is
 Personal finance app (Next.js 14 + Supabase + Xero). Tracks household transactions, categorises them, links to Xero for business bank feed. Business transactions come exclusively from Xero. Personal transactions come from CSV bank extracts only. No overlap.
@@ -123,17 +123,6 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 | `src/app/api/admin/wipe-business-transactions/route.ts` | Full business data wipe |
 | `src/lib/__tests__/merchantCategoryRules.test.ts` | Rule tests — all 16 rules, all 5 output fields + schema validation |
 
-## DB schema notes
-- `transactions.external_id` — unique, nullable. Xero: BankTransactionID. CSV: null.
-- `transactions.matched_rule` — which named rule fired, e.g. `merchant:oncore_income`
-- `transactions.gl_account` — Xero chart-of-accounts name
-- `transactions.is_subscription` — BOOLEAN NOT NULL DEFAULT FALSE
-- `transactions.raw_description` — TEXT nullable. Xero: pipe-separated context fields.
-- `transactions.source` — 'xero' or 'csv'
-- `merchant_mappings.source` — 'manual' | 'auto'. Pipeline only reads 'manual' rows.
-- Business accounts: `institution = 'Xero'` OR `scope = 'business'`
-- Personal accounts: `scope = 'household'`, CSV only
-
 ### Task 15 — Coverage inspector three-state match status + search (done ✅)
 - `MatchStatus` type: `'rule' | 'gl' | 'unmatched'`
   - `'rule'` — a named rule fired (`matched_rule` non-null)
@@ -148,12 +137,55 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 - 7 new matchStatus tests in coverageReport.test.ts, 2 new status-filter tests in coverageRoute.test.ts
 - 608 tests passing after this task
 
-## Outstanding backlog items
-- **Task 14**: Fix reconciliation page — DB count = 0 for most accounts
-- **Task 18**: Outcome bucket grouping — wire taxonomy into spending and reporting views
-- **Next productive session**: Use `/dev/coverage` Unmatched view (now showing only genuine gaps) to work through top unmatched merchants by transaction count and add named rules. Decision framework: named rule to assert category regardless of Xero GL; trust GL hint when Xero per-transaction coding is reliable.
+### Task 14 — Reconcile page DB count fix (done ✅)
+- Was filtering `.eq('source', 'xero')` — source column defaults to 'csv', sync wasn't setting it → zero counts
+- Fixed: use `.not('external_id', 'is', null)` as Xero discriminator; sync now sets `source: 'xero'` explicitly
+- Also fixed: DB count was capped at 1,000 (Supabase default). Fixed with `{ count: 'exact' }` + `.limit(10000)`
+- 612 tests passing after this task
 
-## Git state
-- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | All pushed
-- 608 tests passing
-- Production: https://app.hearth.money
+### Reconcile Xero count fix (done ✅)
+- `getXeroBankTransactionCount` paginates 100/page; BHT needs 50 sequential calls ≈ 25s → serverless timeout → null for all accounts
+- **Proper fix:** store `last_xero_sync_count` + `last_xero_synced_at` on `accounts` table; written at end of each full sync from `raws` array (already RECEIVE-TRANSFER filtered)
+- Reconcile route reads stored count — no live Xero API calls; `getXeroBankTransactionCount` deleted from `xeroApi.ts`
+- Reconcile UI gains "Synced" column showing date of last full sync
+- DB migration: `ALTER TABLE accounts ADD COLUMN IF NOT EXISTS last_xero_sync_count INTEGER, ADD COLUMN IF NOT EXISTS last_xero_synced_at TIMESTAMPTZ`
+- **⚠️ Migration must be run in Supabase dashboard before deploying**
+- **After deploy: run full sync to populate counts** — `curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"`
+- 612 tests passing
+
+## DB schema notes
+- `transactions.external_id` — unique, nullable. Xero: BankTransactionID. CSV: null.
+- `transactions.matched_rule` — which named rule fired, e.g. `merchant:oncore_income`
+- `transactions.gl_account` — Xero chart-of-accounts name
+- `transactions.is_subscription` — BOOLEAN NOT NULL DEFAULT FALSE
+- `transactions.raw_description` — TEXT nullable. Xero: pipe-separated context fields.
+- `transactions.source` — 'xero' or 'csv'
+- `merchant_mappings.source` — 'manual' | 'auto'. Pipeline only reads 'manual' rows.
+- `accounts.last_xero_sync_count` — INTEGER nullable. Set at end of each full sync.
+- `accounts.last_xero_synced_at` — TIMESTAMPTZ nullable. Set at end of each full sync.
+- Business accounts: `institution = 'Xero'` OR `scope = 'business'`
+- Personal accounts: `scope = 'household'`, CSV only
+
+### Named rules — personal merchants batch 1 (done ✅)
+17 new rules added covering top unmatched personal CSV merchants:
+- Personal income: `salary_nicola_education_qld` (Nicola's salary, owner: Nicola, isIncome: true)
+- Education: `mansfield_state_high` (school canteen → Eating Out), `learning_ladders` (isSubscription)
+- Health & Fitness: `fitness_passport`, `fitstop`, `fitbox`, `ironfist_gym` (all isSubscription where applicable)
+- Insurance: `hcf_health_insurance`, `hospitals_contribution`, `clearview_insurance` (all isSubscription)
+- Utilities/Gov: `qld_urban_utilities`, `brisbane_city_council`, `bcc_rates`, `qld_transport_rego`
+- Food: `the_bread_corner` (fixes wrong Business autoCategory)
+- Technology: `apple_bill` (isSubscription)
+- Transport: `translink`
+- Two new categories added to `categories.ts`: `Health & Fitness`, `Food & Groceries`
+- `reprocess-csv` endpoint created: `POST /api/admin/reprocess-csv` — re-applies pipeline rules to all 852 existing CSV transactions via UPDATE by ID
+- 647 tests passing after this work
+
+### Task 18 — Outcome bucket grouping (done ✅)
+- `getOutcomeBucket()` in `src/lib/categories.ts` — maps (owner, isIncome, isSubscription, category) → string[] hierarchy
+- `GET /api/dev/buckets` — groups transactions by bucket, sums amounts, accepts `?months=N` (default 12, max 36)
+- `/dev/buckets` page — collapsible tree grouped by realm → sub-bucket → leaf, period selector (3/6/12m)
+- 647 tests passing
+
+### Named rules — batch 2 (done ✅)
+25 rules: ALDI, Woolworths, Coles, IGA, The Source, Hanaro Trading, Little Genovese, GYG, KFC, McDonald's, Old Mr Rabbit, Asian Delights, RiverCity Catering, Dicky Beach Seafood, Carina Medical Specialists, Metropol Pharmacy, Medibank Private, Carindale Vet, Target, Myer, The Reject Shop, Hubbl/Binge, Mater Lotteries, CommBank internal transfer.
+Deployed: `f440220` (after fixing null byte c

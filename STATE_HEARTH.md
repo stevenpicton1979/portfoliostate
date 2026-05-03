@@ -1,5 +1,5 @@
 # Hearth App — Session State
-_Last updated: 2026-05-03 (session 3)_
+_Last updated: 2026-05-03 (session 5)_
 
 ## What Hearth is
 Personal finance app (Next.js 14 + Supabase + Xero). Tracks household transactions, categorises them, links to Xero for business bank feed. Business transactions come exclusively from Xero. Personal transactions come from CSV bank extracts only. No overlap.
@@ -226,58 +226,69 @@ TFAP PTY LTD (4), TEJGON PTY LTD (3), H C KALYAN PTY LTD (2), TEAM COOPS PTY LTD
 - 768 tests passing after this work
 
 ### Subscriptions inventory rebuild (done ✅, session 4)
-Full rebuild of `/subscriptions` from a simple triage queue into a real subscription inventory:
-
-**Architecture:**
-- Three-tab primary layout: **My Subscriptions** / **Detected Candidates** / **Dismissed**
-- Secondary collapsible "More analysis" section: Lapsed / Duplicates / Timeline tabs
-- Optimistic UI state — confirmedSet/dismissedSet update immediately, API calls happen async
-
-**My Subscriptions tab:**
-- Shows all merchants with `classification='Subscription'` in merchant_mappings
-- Each row shows frequency, account, amount, annual cost, last/next dates
-- Expand → lazy-loaded metadata form + transaction drill-down
-- Confirmed subscriptions that are no longer detected show "No recent transactions" badge
-
-**Detected Candidates tab:**
-- Shows detected subscriptions not yet confirmed or dismissed
-- Each row has "Add to my subscriptions" and "Not a subscription" buttons
-- Expand → transaction drill-down (no metadata form until confirmed)
-
-**Dismissed tab:**
-- Shows dismissed merchants with "Bring Back" button (DELETE /api/mappings removes the row)
-
-**New files:**
-- `scripts/addSubscriptionMetadata.sql` — DB migration for `subscription_metadata` table (composite PK: `merchant + household_id`). **⚠️ Must run in Supabase before deploying.**
-- `src/lib/subscriptionStatus.ts` — pure `categoriseSubscriptionStatus(merchant, mappings)` function
-- `src/app/api/subscriptions/metadata/route.ts` — GET (returns saved metadata) + PUT (upserts; validates merchant is classified as Subscription)
-- `src/app/api/subscriptions/transactions/route.ts` — GET transactions for a merchant with account display_name join
-
-**subscription_metadata table columns:** `merchant, household_id, cancellation_url, account_email, notes, auto_renews (bool, default true), next_renewal_override (date), category, created_at, updated_at`
-
-**Tests:** 28 new tests across 3 test files (subscriptionStatus × 7, subscriptionMetadataRoute × 11, subscriptionTransactionsRoute × 6 + status ones)
-
+Initial rebuild of `/subscriptions` — 3-tab UI, subscription_metadata table, metadata form, transaction drill-down.
 **Commit:** `857e24d` — 800 tests passing
 
+### Subscriptions relational model (done ✅, session 5)
+Full migration from merchant-string-keyed `subscription_metadata` to a proper relational model:
+
+**New tables:**
+- `subscriptions` (UUID PK, `name`, metadata fields, `is_active` soft-delete, `household_id`)
+- `subscription_merchants` (composite PK `subscription_id + merchant`, UNIQUE on `household_id + merchant`)
+
+**New/updated API routes:**
+- `GET/POST /api/subscriptions` — list all (with merchant aliases) + create from candidate
+- `GET/PUT/DELETE /api/subscriptions/:id` — single + metadata update + soft-delete (removes merchant links)
+- `POST /api/subscriptions/:id/restore` — re-activate (merchants NOT auto-restored)
+- `POST /api/subscriptions/:id/merchants` — add alias (409 if linked elsewhere)
+- `DELETE /api/subscriptions/:id/merchants/:merchant` — remove alias (400 if last)
+- `POST /api/subscriptions/merge` — reassign source merchants → target, append notes, delete source
+- `GET /api/subscriptions/transactions` — now accepts `?subscription_id=Y` for multi-merchant drill-down
+
+**Detection changes:**
+- `detectSubscriptions()` accepts `options.merchantToSubId` + `options.subNames` maps
+- Transactions grouped across all linked merchant aliases → single `DetectedSubscription` entry per subscription
+- `DetectedSubscription` gains `subscription_id | null`, `display_name`, `merchants[]`
+- New `Subscription` interface in `types.ts`
+
+**UI (`SubscriptionsClient.tsx` rewrite):**
+- **My Subscriptions**: shows `Subscription[]` rows with name, merchant alias chips, detection data; expand → `MetadataForm` (PUT /api/subscriptions/:id), `MerchantAliasManager` (add/remove aliases), transaction drill-down via `?subscription_id=Y`
+- **Candidates**: inline name prompt on confirm → POST /api/subscriptions; dismiss → PATCH /api/mappings
+- **Dismissed**: two types merged — dismissed `Subscription[]` (restore) + dismissed merchant_mappings strings (bring back)
+
+**Migration scripts** (run manually in Supabase before deploy):
+1. `scripts/addSubscriptionsTables.sql` — creates both tables + UNIQUE index
+2. `scripts/migrateSubscriptionsToTables.sql` — idempotent data migration from existing confirmed merchant_mappings + subscription_metadata
+
+`subscription_metadata` table kept as deprecated — not dropped.
+
+**Commit:** `1884f61` — 804 tests passing
+
+### Business-account subscription detection (done ✅, session 5)
+- `/subscriptions` page used to filter transactions to `scope='household'` accounts only
+- Removed filter: Spotify, Xbox, Google One etc. (classified as `owner='Business'`) now correctly detected
+- **Commit:** `16a9801`
+
 ## Outstanding backlog items
-- **⚠️ DB migration needed before next deploy:** Run `scripts/addSubscriptionMetadata.sql` in Supabase SQL editor to create `subscription_metadata` table
+- **⚠️ DB migrations needed before next deploy (run in order in Supabase SQL editor):**
+  1. `scripts/addSubscriptionsTables.sql` — creates `subscriptions` + `subscription_merchants` tables
+  2. `scripts/migrateSubscriptionsToTables.sql` — migrates existing subscription data from `merchant_mappings` + `subscription_metadata`
+  3. _(Also still needed if not yet run)_ `scripts/addSubscriptionMetadata.sql` — the old subscription_metadata table (needed for migration script to read from)
 - **Next session deploy steps**:
-  1. Run Supabase migration: `scripts/addSubscriptionMetadata.sql`
-  2. `git push` from Windows Git Bash
+  1. Run Supabase migrations above (in order)
+  2. Push already done (`1884f61` on origin/main)
   3. Wait for Vercel deploy
-  4. `curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"` to re-apply rules (for batch 4 + personal rules from session 3)
-  5. Check `/subscriptions` page renders correctly with the new 3-tab UI
-  6. Check `/dev/coverage` to confirm unmatched count ≈ 6
-  7. Visit `/spending` and `/` (dashboard) to verify bucket UI renders
+  4. Check `/subscriptions` — My Subscriptions tab should show migrated subscriptions with merchant chips
+  5. Check `/dev/coverage` to confirm unmatched count ≈ 6
 - **Future**: Manual `/mappings` pass for the 6 remaining truly-ambiguous PTY LTDs as transactions accumulate
 - **Operational notes**:
   - git lock file (`index.lock`) keeps appearing in Linux sandbox — always commit from Windows Git Bash, not the sandbox
   - Edit/Write tools corrupt files (silent truncation + occasional null bytes) — always use bash + python heredoc + verify with `python3 -c "open(f,'rb').read().count(b'\x00')"` before commit. Truncation can also remove existing content, so always check `git diff --stat` after edits and confirm no unexpected line losses.
 
 ## Git state
-- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | committed, **push pending** (Steven's manual push)
-- HEAD: `857e24d` (subscriptions inventory rebuild)
-- 800 tests passing (28 new this session: 7 subscriptionStatus + 11 subscriptionMetadata route + 6 subscriptionTransactions route + several from session-3 items already counted)
+- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
+- HEAD: `1884f61` (subscriptions relational model)
+- 804 tests passing
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

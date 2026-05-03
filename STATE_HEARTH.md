@@ -337,10 +337,26 @@ Full cancel/restore lifecycle with 4-tab UI:
 
 **⚠️ MIGRATION REQUIRED before deploy:** run `scripts/addCancelledColumns.sql` in Supabase SQL editor
 
+### Named rules — Batch 5: Streaming & SaaS (done ✅)
+13 rules covering streaming services and productivity SaaS on Steven's business card. Without a named rule these landed in "Eating Out" via Xero GL account 420 mapping. Named rules now fire first.
+
+**Entertainment (Business, isSubscription: true):**
+`netflix_streaming`, `disney_plus`, `amazon_prime_video`, `youtube_premium`, `playstation_network`, `nintendo_eshop`, `crunchyroll`, `audible`, `kayo_sports`
+
+**Technology (Business, isSubscription: true):**
+`adobe_subscription`, `canva_subscription`, `dropbox_subscription`, `notion_subscription`
+
+Skipped (already covered): `spotify`, `xbox`, `steam_games`, `google_one`, `hubbl_binge`, `apple_bill`
+Skipped (too ambiguous without diagnostic SQL): Stan
+
+**After deploy:** run `curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"` to backfill `matched_rule` on existing streaming transactions and verify on /dev/coverage.
+
+**Commit:** `bf25d1a` — 902 tests passing
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `66c980d` (cancelled subscription lifecycle)
-- 860 tests passing
+- HEAD: `bf25d1a` (Batch 5 streaming/SaaS rules)
+- 902 tests passing
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

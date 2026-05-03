@@ -295,10 +295,23 @@ Full migration from merchant-string-keyed `subscription_metadata` to a proper re
   - git lock file (`index.lock`) keeps appearing in Linux sandbox — always commit from Windows Git Bash, not the sandbox
   - Edit/Write tools corrupt files (silent truncation + occasional null bytes) — always use bash + python heredoc + verify with `python3 -c "open(f,'rb').read().count(b'\x00')"` before commit. Truncation can also remove existing content, so always check `git diff --stat` after edits and confirm no unexpected line losses.
 
+### Subscription detection category bypass fix (done ✅, session 5 continued)
+Confirmed subscriptions whose merchant alias transactions had a category in `EXCLUDED_CATEGORIES` (e.g. 'Medical' for health insurance, 'Shopping' for subscription boxes) were silently filtered from detection, showing "No recent transactions" and $0 annual cost in the UI.
+
+**Root cause:** `subscriptionDetector.ts` applied `EXCLUDED_CATEGORIES` unconditionally. The filter is intended for auto-candidate detection, not for merchants explicitly linked via `subscription_merchants`.
+
+**Fix:** Added `!subId &&` guard so the category exclusion only fires for unlinked merchant groups.
+
+**Tests added** to `subscriptionDetector.test.ts`:
+- Two new describe blocks: "merchantToSubId option — linked subscription detection" (3 tests) and "Linked subscriptions bypass category exclusion" (3 tests)
+- Covers: 'Medical' category bypass, 'Shopping' category bypass, unlinked merchants still excluded, multi-merchant grouping, subscription name ≠ alias display_name
+
+**Commit:** `8724502` — 827 tests passing
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `9a673b9` (subscription detail panel UI)
-- 821 tests passing
+- HEAD: `8724502` (subscription category bypass fix)
+- 827 tests passing
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

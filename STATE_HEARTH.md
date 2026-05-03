@@ -1,5 +1,5 @@
 # Hearth App — Session State
-_Last updated: 2026-05-03 (session 6)_
+_Last updated: 2026-05-04 (session 7)_
 
 ## What Hearth is
 Personal finance app (Next.js 14 + Supabase + Xero). Tracks household transactions, categorises them, links to Xero for business bank feed. Business transactions come exclusively from Xero. Personal transactions come from CSV bank extracts only. No overlap.
@@ -101,6 +101,11 @@ Category is ALWAYS the leaf node — never the realm. `owner` already encodes th
 
 ## Repeatable reset runbook
 ```bash
+# Single command — wipes, resyncs, and verifies per-account row counts
+curl -s -X POST "https://app.hearth.money/api/admin/wipe-and-resync?confirm=true"
+```
+Manual mode (debugging / wipe-only):
+```bash
 curl -s -X POST "https://app.hearth.money/api/admin/wipe-business-transactions?confirm=true"
 curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 ```
@@ -112,6 +117,8 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 | `src/lib/categories.ts` | Canonical Category type — all allowed leaf category strings |
 | `src/lib/merchantCategoryRules.ts` | Named rules engine — add all new rules here |
 | `src/lib/categoryPipeline.ts` | `processBatch` + `upsertTransactions` |
+| `src/lib/businessTransactionsWipe.ts` | Shared wipe logic (paginated ID fetch + chunked delete) |
+| `src/lib/xeroSyncRunner.ts` | Thin wrapper around `/api/xero/sync` for internal calls |
 | `src/lib/directorIncome.ts` | Director income detection (fires before transfer check) |
 | `src/lib/reconcile.ts` | Pure reconciliation functions |
 | `src/lib/coverageReport.ts` | Pure coverage aggregation functions |
@@ -396,17 +403,48 @@ All POST responses now include `action: 'created' | 'updated' | 'restored'`.
 
 **Commit:** `711ff68` — 920 tests passing
 
-**Post-deploy steps (run after Vercel deploys):**
+**Post-deploy steps (run after Vercel deploys `711ff68`):**
 ```bash
+# Use the new unified endpoint (f846ebe) if Vercel is already on that commit:
+curl -s -X POST "https://app.hearth.money/api/admin/wipe-and-resync?confirm=true"
+# Or manually if on 711ff68:
 curl -s -X POST "https://app.hearth.money/api/admin/wipe-business-transactions?confirm=true"
 curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 ```
 Then verify on /transactions: AldiMobile rows show 'Internet & Phone'; Bank Transfer to Mastercard rows show as Transfer.
 
+### Unified wipe-and-resync endpoint (done ✅, session 7)
+
+**Motivation:** Running only the first curl (wipe) without the second (sync) leaves all business accounts at 0 rows. This happened in production — row counts went to 0 and went unnoticed for a while. A single command with built-in verification removes the failure mode.
+
+**New endpoint: POST /api/admin/wipe-and-resync[?confirm=true]**
+
+File: `src/app/api/admin/wipe-and-resync/route.ts`
+
+Behaviour (confirmed mode):
+1. **Wipe** — calls `runBusinessTransactionsWipe(false)` to delete all business transactions, capturing pre-wipe counts per account
+2. **Sync** — calls `runXeroFullSync()` (thin wrapper around the sync route handler, passing `full=true`)
+3. **Verify** — re-counts transactions per account via `SELECT COUNT(*)`, classifies each:
+   - `ok` — post-sync within ±5% of pre-wipe (or both zero)
+   - `info` — post-sync > pre-wipe × 1.05 (legitimate growth, overall ok=true)
+   - `warn` — post-sync < pre-wipe × 0.95 (significant drop, ok=false)
+   - `error` — post-sync == 0 but pre-wipe > 0 (sync failed, ok=false)
+
+Dry-run (no ?confirm=true): returns account metadata + pre-wipe counts, no wipe or sync.
+
+**Refactoring:**
+- `src/lib/businessTransactionsWipe.ts` — extracted from the old wipe route; `runBusinessTransactionsWipe(dryRun)` is fully self-contained. Both the old and new endpoints use it.
+- `src/lib/xeroSyncRunner.ts` — thin wrapper around the sync POST handler, mockable in tests.
+- Old `POST /api/admin/wipe-business-transactions` still exists; now delegates to the lib helper. JSDoc deprecation note added pointing to wipe-and-resync.
+
+**Tests:** 12 new tests in `wipeAndResyncRoute.test.ts` — dry-run preview, happy path, per-account classification (ok/warn/error/info), sync error handling, response shape validation.
+
+**Commit:** `f846ebe` — 932 tests passing
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `711ff68` (Batch 6 rules + POST relink fix)
-- 920 tests passing
+- HEAD: `f846ebe` (unified wipe-and-resync endpoint)
+- 932 tests passing
 - Production: https://app.hearth.money
 
 ## Outstanding & next steps
@@ -418,15 +456,14 @@ session opens fresh, double-check by querying for the
 `subscription_merchants`, `subscriptions.cancelled_at`, and `Bank Fees`
 category presence before assuming.
 
-**Post-deploy steps for Batch 6 (after Vercel deploys `711ff68`):**
+**Post-deploy steps for Batch 6 + wipe-and-resync (after Vercel deploys `f846ebe`):**
 ```bash
-curl -s -X POST "https://app.hearth.money/api/admin/wipe-business-transactions?confirm=true"
-curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
+curl -s -X POST "https://app.hearth.money/api/admin/wipe-and-resync?confirm=true"
 ```
-Then verify: AldiMobile → Internet & Phone, Bank Transfer to Mastercard → Transfer.
+Then verify the JSON response: `ok: true`, all accounts `status: 'ok'` or `'info'`, and check /transactions: AldiMobile → Internet & Phone, Bank Transfer to Mastercard → Transfer.
 
-**Likely next work (open at end of session 6):**
-- Run the post-deploy curl commands above once Vercel is live.
+**Likely next work (open at end of session 7):**
+- Run the post-deploy curl above once Vercel is live.
 - Validate the dashboard widget in production: HCF Health Insurance shows
   once with combined cadence, OCT-DEC 2025 no longer appears.
 - Run `npx tsx scripts/generateCoverageFixture.ts` to replace the

@@ -353,10 +353,24 @@ Skipped (too ambiguous without diagnostic SQL): Stan
 
 **Commit:** `bf25d1a` — 902 tests passing
 
+### Dashboard upcoming subscriptions — relational model fix (done ✅)
+
+Three bugs fixed in the "Upcoming Subscriptions" dashboard widget:
+
+1. **Dismissed merchants no longer appear** — e.g. 'OCT-DEC 2025' (quarterly tax payment) was showing as a fake subscription. Dashboard now fetches `merchant_mappings WHERE classification = 'Not a subscription'` and filters them out.
+2. **Multi-alias subscriptions consolidated** — e.g. HCF Health Insurance (aliases: HCFHEALTH + THE HOSPITALS CONTRI) now shows once as "HCF Health Insurance" instead of two raw rows. Dashboard fetches `subscriptions + subscription_merchants WHERE is_active = true` and passes the maps to `detectSubscriptions`.
+3. **Cancelled sub merchants surface as candidates** — `subscriptions/page.tsx` now builds `activeMerchantToSubId` from active-only subs, so cancelled subscription merchants re-appear as detection candidates rather than staying linked to their old subscription name.
+
+**New shared filter:** `src/lib/subscriptionFilters.ts` — `applySubscriptionFilters(detected, ctx)` drops dismissed-merchant entries and enforces subscription display names. Used identically by both `/dashboard` and `/subscriptions`.
+
+**6 new tests** in `subscriptionFilters.test.ts`.
+
+**Commit:** `1fd3aa5` — 908 tests passing
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `bf25d1a` (Batch 5 streaming/SaaS rules)
-- 902 tests passing
+- HEAD: `1fd3aa5` (dashboard subscription filter fix)
+- 908 tests passing
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

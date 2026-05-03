@@ -283,17 +283,17 @@ Full migration from merchant-string-keyed `subscription_metadata` to a proper re
 - **⚠️ DB migrations needed before next deploy (run in order in Supabase SQL editor):**
   1. `scripts/addSubscriptionsTables.sql` — creates `subscriptions` + `subscription_merchants` tables
   2. `scripts/migrateSubscriptionsToTables.sql` — migrates existing subscription data from `merchant_mappings` + `subscription_metadata`
-  3. _(Also still needed if not yet run)_ `scripts/addSubscriptionMetadata.sql` — the old subscription_metadata table (needed for migration script to read from)
+  3. _(Also still needed if not yet run)_ `scripts/addSubscriptionMetadata.sql` — the old subscription_metadata table
+  4. `scripts/addCancelledColumns.sql` — adds `cancelled_at` + `auto_cancelled` to `subscriptions`
 - **Next session deploy steps**:
-  1. Run Supabase migrations above (in order)
-  2. Push already done (`1884f61` on origin/main)
+  1. Run Supabase migrations 1–4 above (in order)
+  2. Push already done (`66c980d` on origin/main)
   3. Wait for Vercel deploy
-  4. Check `/subscriptions` — My Subscriptions tab should show migrated subscriptions with merchant chips
+  4. Check `/subscriptions` — 4 tabs; Cancelled tab shows archived subscriptions
   5. Check `/dev/coverage` to confirm unmatched count ≈ 6
 - **Future**: Manual `/mappings` pass for the 6 remaining truly-ambiguous PTY LTDs as transactions accumulate
 - **Operational notes**:
   - git lock file (`index.lock`) keeps appearing in Linux sandbox — always commit from Windows Git Bash, not the sandbox
-  - Edit/Write tools corrupt files (silent truncation + occasional null bytes) — always use bash + python heredoc + verify with `python3 -c "open(f,'rb').read().count(b'\x00')"` before commit. Truncation can also remove existing content, so always check `git diff --stat` after edits and confirm no unexpected line losses.
 
 ### Subscription detection category bypass fix (done ✅, session 5 continued)
 Confirmed subscriptions whose merchant alias transactions had a category in `EXCLUDED_CATEGORIES` (e.g. 'Medical' for health insurance, 'Shopping' for subscription boxes) were silently filtered from detection, showing "No recent transactions" and $0 annual cost in the UI.
@@ -308,10 +308,39 @@ Confirmed subscriptions whose merchant alias transactions had a category in `EXC
 
 **Commit:** `8724502` — 827 tests passing
 
+### Cancelled subscription lifecycle (done ✅, session 5 continued)
+Full cancel/restore lifecycle with 4-tab UI:
+
+**Schema** (`scripts/addCancelledColumns.sql`):
+- `cancelled_at DATE` and `auto_cancelled BOOLEAN NOT NULL DEFAULT FALSE` on `subscriptions`
+- Backfills existing `is_active=false` rows with `cancelled_at = updated_at::date`
+
+**API changes:**
+- **NEW** `POST /api/subscriptions/:id/cancel` — sets `is_active=false`, idempotent (won't overwrite existing `cancelled_at`), 400 for future dates
+- **Updated** `DELETE /api/subscriptions/:id` — now cancels as of today (sets `cancelled_at`); keeps merchant aliases so lifetime_spend remains computable
+- **Updated** `POST /api/subscriptions/:id/restore` — also clears `cancelled_at` and `auto_cancelled`
+- **Extended** `GET /api/subscriptions` — adds `lifetime_spend` and `months_since_cancelled` computed fields
+- **Extended** `POST /api/subscriptions` — supports `is_active=false + cancelled_at` to create as cancelled
+- Extracted `computeMonthsSince()` to `src/lib/subscriptionUtils.ts` (can't export non-handlers from Next.js route files)
+
+**UI (SubscriptionsClient.tsx):**
+- 4-tab structure: My Subscriptions / Detected Candidates / Cancelled / Dismissed merchants
+- `CancelPanel` — inline date picker on active rows, calls POST /:id/cancel
+- `CancelledSubRow` — ArchiveBoxIcon, cancelled date, lifetime spend, restore button
+- Active rows: "Possibly cancelled" amber badge + "Mark as cancelled…" link in expand panel
+- Candidates: "Add as cancelled" mode with name + date fields
+- Summary strip: 5th card "Cancelled (N)" showing total lifetime spend
+
+**Tests:** 33 new tests — cancel route (10), lifecycle DELETE/restore (8), main route GET/POST + computeMonthsSince (15)
+
+**Commit:** `66c980d` — 860 tests passing
+
+**⚠️ MIGRATION REQUIRED before deploy:** run `scripts/addCancelledColumns.sql` in Supabase SQL editor
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `8724502` (subscription category bypass fix)
-- 827 tests passing
+- HEAD: `66c980d` (cancelled subscription lifecycle)
+- 860 tests passing
 - Production: https://app.hearth.money
 
 ## Files changed this session (session 3)

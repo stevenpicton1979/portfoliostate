@@ -1,5 +1,5 @@
 # Hearth App — Session State
-_Last updated: 2026-05-03 (session 5)_
+_Last updated: 2026-05-03 (session 6)_
 
 ## What Hearth is
 Personal finance app (Next.js 14 + Supabase + Xero). Tracks household transactions, categorises them, links to Xero for business bank feed. Business transactions come exclusively from Xero. Personal transactions come from CSV bank extracts only. No overlap.
@@ -361,10 +361,52 @@ Three bugs fixed in the "Upcoming Subscriptions" dashboard widget:
 
 **Commit:** `dfde567` — 910 tests passing
 
+### Named rules — Batch 6: Internet & Phone + Transfers (done ✅, session 6)
+
+Two new rules:
+
+**`aldimobile_business`** — matches `/aldimobile/i` (covers "MED*ALDIMOBILE CHATSWOOD AUS" and bare "ALDIMOBILE 12345"). Category: `Internet & Phone`, owner: `Business`, isSubscription: true.
+
+**`bank_transfer_to_mastercard`** — matches `^bank transfer to mastercard` (BHT bank account → Mastercard Bus. Plat. payoff). Category: null (transfer), isTransfer: true.
+
+- 6 new rule tests in `merchantCategoryRules.test.ts`
+- 2 new canaries in `coverageMerchants.json`
+- No new intentionalCollisions needed: bank-transfer shares existing transfer fingerprint; aldimobile has unique `Internet & Phone/Business/isSubscription:true` fingerprint
+
+### POST /api/subscriptions — cancelled-merchant relink fix (done ✅, session 6)
+
+**Problem:** Candidate "Confirm" on a merchant that was linked to a *cancelled* subscription always returned 409. But cancelled sub merchants are deliberately excluded from `activeMerchantToSubId` so they surface as candidates again — creating a contradiction.
+
+**Fix:** POST handler branches on `existingLink.is_active`:
+- Linked to **active** sub → 409 (unchanged)
+- Linked to **cancelled** sub + `is_active=false` + new `cancelled_at` → update the existing row's `cancelled_at`, return 200 + `action='updated'` (idempotent: skip DB write if date already matches)
+- Linked to **cancelled** sub + `is_active=true` (confirm → active) → restore the existing row (`is_active=true, cancelled_at=null, auto_cancelled=false`), return 200 + `action='restored'`
+- New merchant (no existing link) → create, return 201 + `action='created'`
+
+All POST responses now include `action: 'created' | 'updated' | 'restored'`.
+
+**UI (`SubscriptionsClient.tsx`):** `CandidateRow` extended with `onRestored?` and `onUpdated?` callbacks. `handleConfirm` and `handleAddAsCancelled` branch on `data.action` to call the appropriate handler. Main component handlers move the restored/updated sub to the correct tab without creating duplicates.
+
+**Tests:** 5 new POST relink tests in `subscriptionMainRoute.test.ts`:
+- action='created' on new merchant
+- 409 when linked to active sub (updated to set `existingLinkedSub` explicitly)
+- 200 + action='restored' when linked to cancelled sub, is_active=true, no new row
+- 200 + action='updated' when linked to cancelled sub, is_active=false + new date, no new row
+- Idempotency: same cancelled_at skips DB update (`db.updateCalled === false`)
+
+**Commit:** `711ff68` — 920 tests passing
+
+**Post-deploy steps (run after Vercel deploys):**
+```bash
+curl -s -X POST "https://app.hearth.money/api/admin/wipe-business-transactions?confirm=true"
+curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
+```
+Then verify on /transactions: AldiMobile rows show 'Internet & Phone'; Bank Transfer to Mastercard rows show as Transfer.
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `dfde567` (stale CATEGORIES constant fix)
-- 910 tests passing
+- HEAD: `711ff68` (Batch 6 rules + POST relink fix)
+- 920 tests passing
 - Production: https://app.hearth.money
 
 ## Outstanding & next steps
@@ -376,7 +418,15 @@ session opens fresh, double-check by querying for the
 `subscription_merchants`, `subscriptions.cancelled_at`, and `Bank Fees`
 category presence before assuming.
 
-**Likely next work (open at end of session 5):**
+**Post-deploy steps for Batch 6 (after Vercel deploys `711ff68`):**
+```bash
+curl -s -X POST "https://app.hearth.money/api/admin/wipe-business-transactions?confirm=true"
+curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
+```
+Then verify: AldiMobile → Internet & Phone, Bank Transfer to Mastercard → Transfer.
+
+**Likely next work (open at end of session 6):**
+- Run the post-deploy curl commands above once Vercel is live.
 - Validate the dashboard widget in production: HCF Health Insurance shows
   once with combined cadence, OCT-DEC 2025 no longer appears.
 - Run `npx tsx scripts/generateCoverageFixture.ts` to replace the

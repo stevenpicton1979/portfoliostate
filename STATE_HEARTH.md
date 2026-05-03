@@ -349,10 +349,22 @@ Three bugs fixed in the "Upcoming Subscriptions" dashboard widget:
 
 **Commit:** `1fd3aa5` — 908 tests passing
 
+### Stale CATEGORIES constant removed (done ✅)
+
+`constants.ts` had a divergent 26-item `CATEGORIES` list missing canonical entries added in Task 17 (Healthcare, Bank Fees, Business Revenue, Accounting, Internet & Phone, Health & Fitness). Transactions with those categories showed as "Uncategorised" in every dropdown (/transactions, /mappings, /settings/budgets, etc.).
+
+**Fix:**
+- Removed `CATEGORIES` + `Category` entirely from `constants.ts` (kept `DEFAULT_HOUSEHOLD_ID`, `CLASSIFICATIONS`, `Classification`)
+- 7 consumer files updated to import `CATEGORIES` from `@/lib/categories` (canonical source)
+- `MappingsTable.tsx` + `TransactionTable.tsx` now split-import: `CATEGORIES` from categories, `CLASSIFICATIONS` from constants
+- 2 new guards in `categoryConstants.test.ts`: canonical list contains Healthcare/Bank Fees, does NOT contain Medical/Clothing & Apparel/Family/Holiday/Other
+
+**Commit:** `dfde567` — 910 tests passing
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `1fd3aa5` (dashboard subscription filter fix)
-- 908 tests passing
+- HEAD: `dfde567` (stale CATEGORIES constant fix)
+- 910 tests passing
 - Production: https://app.hearth.money
 
 ## Outstanding & next steps

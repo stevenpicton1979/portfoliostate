@@ -120,15 +120,22 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 | `src/lib/businessTransactionsWipe.ts` | Shared wipe logic (paginated ID fetch + chunked delete) |
 | `src/lib/xeroSyncRunner.ts` | Thin wrapper around `/api/xero/sync` for internal calls |
 | `src/lib/directorIncome.ts` | Director income detection (fires before transfer check) |
+| `src/lib/transferLinker.ts` | Links transfer pairs + propagates BHT gl_account/contact_name |
+| `src/lib/xeroContactParser.ts` | Parses first pipe-segment from Xero raw_description |
+| `src/lib/positionAggregation.ts` | Pure function — aggregates Director Drawings by period |
 | `src/lib/reconcile.ts` | Pure reconciliation functions |
 | `src/lib/coverageReport.ts` | Pure coverage aggregation functions |
 | `src/lib/xeroCategories.ts` | `cleanXeroMerchant`, `mapGlNameToCanonicalCategory`, GL→canonical map |
 | `src/lib/xeroApi.ts` | Xero API client |
 | `src/app/api/xero/sync/route.ts` | Main Xero sync — `?full=true` for deep sync |
+| `src/app/api/admin/wipe-and-resync/route.ts` | Unified wipe + sync + verify (primary reset command) |
+| `src/app/api/admin/relink-transfers/route.ts` | Backfill: propagate gl_account/contact_name to personal side |
+| `src/app/api/admin/reprocess-csv/route.ts` | Re-apply rules to all CSV transactions in-place |
+| `src/app/dashboard/PositionWidget.tsx` | Director Drawings provisional draws card on dashboard |
 | `src/app/dev/reconcile/page.tsx` | Reconciliation UI |
 | `src/app/dev/coverage/page.tsx` | Coverage inspector UI |
-| `src/app/api/admin/wipe-business-transactions/route.ts` | Full business data wipe |
-| `src/lib/__tests__/merchantCategoryRules.test.ts` | Rule tests — all 16 rules, all 5 output fields + schema validation |
+| `src/lib/__tests__/merchantCategoryRules.test.ts` | Rule tests — all rules, all output fields + schema validation |
+| `scripts/addPositionFoundation.sql` | Migration: is_provisional, linked_gl_account, contact_name |
 
 ### Task 15 — Coverage inspector three-state match status + search (done ✅)
 - `MatchStatus` type: `'rule' | 'gl' | 'unmatched'`
@@ -163,8 +170,11 @@ curl -s -X POST "https://app.hearth.money/api/xero/sync?full=true"
 ## DB schema notes
 - `transactions.external_id` — unique, nullable. Xero: BankTransactionID. CSV: null.
 - `transactions.matched_rule` — which named rule fired, e.g. `merchant:oncore_income`
-- `transactions.gl_account` — Xero chart-of-accounts name
+- `transactions.gl_account` — Xero chart-of-accounts name (BHT side only)
 - `transactions.is_subscription` — BOOLEAN NOT NULL DEFAULT FALSE
+- `transactions.is_provisional` — BOOLEAN NOT NULL DEFAULT FALSE. True for Director Drawings not yet confirmed by accountant.
+- `transactions.linked_gl_account` — GL account from paired transfer (personal side gets BHT's gl_account via relink-transfers)
+- `transactions.contact_name` — first pipe-segment of paired transfer's raw_description (e.g. "Steven Picton")
 - `transactions.raw_description` — TEXT nullable. Xero: pipe-separated context fields.
 - `transactions.source` — 'xero' or 'csv'
 - `merchant_mappings.source` — 'manual' | 'auto'. Pipeline only reads 'manual' rows.
@@ -441,10 +451,94 @@ Dry-run (no ?confirm=true): returns account metadata + pre-wipe counts, no wipe 
 
 **Commit:** `f846ebe` — 932 tests passing
 
+### cba_interest_charges rule (done ✅, session 7 continued)
+
+Rule added to `merchantCategoryRules.ts`: matches `/^interest charges$/i` exactly (anchored to avoid matching "INTEREST ON CASH ADV"). Category: Bank Fees, owner: Joint. 2 tests. Updated intentionalCollisions comment to include it.
+
+**Commit:** `0226bf7` — 934 tests passing
+
+### Director Drawings model + Position widget (done ✅, session 8)
+
+**Schema (`scripts/addPositionFoundation.sql`):**
+- `is_provisional BOOLEAN NOT NULL DEFAULT FALSE`
+- `linked_gl_account TEXT` — propagated from BHT side by transfer linker
+- `contact_name TEXT` — parsed from BHT raw_description by transfer linker
+- Two partial indexes for efficient filtering
+
+**`src/lib/xeroContactParser.ts`** — pure utility:
+- `parseXeroContactName(raw)` → extracts first pipe-segment from "Steven Picton | Mar 2026 | BHT"
+
+**`src/lib/categories.ts`:**
+- Added `'Director Drawings'` to CATEGORIES
+- `getOutcomeBucket()` routes `Director Drawings` to `['Personal', 'Joint', 'Director Drawings (provisional)']` (own bucket, not Income or Expenses)
+
+**`src/lib/merchantCategoryRules.ts`:**
+- `RuleContext` extended: `linkedGlAccount?`, `linkedContactName?`
+- `RuleResult` / `MerchantCategoryRule.output` extended: `isProvisional?`
+- `bht_wages_payable` — GL "Wages Payable" → Payroll Expense / Business
+- `steven_wage_from_bht` — linked GL "Wages Payable" + contact "steven" → Salary / Steven (placed BEFORE `commbank_internal_transfer`)
+- `bht_directors_loan_to_joint` — linked GL contains "directors loan" → Director Drawings / Joint, `isProvisional: true` (placed BEFORE `commbank_internal_transfer`)
+- Fingerprint test updated: added Payroll Expense/Business to intentionalCollisions
+
+**`src/lib/directorIncome.ts`:**
+- Added `SKIP_TRANSFER_FROM = /^transfer from\s+xx\d{4}/i` gate — personal-side credits (initially caught as transfers) are not misclassified as director income on first import
+
+**`src/lib/transferLinker.ts`:**
+- Extended `select` to include `gl_account, raw_description`
+- After pairing: propagates BHT gl_account → personal side `linked_gl_account`; parses BHT raw_description → personal side `contact_name`
+
+**`src/lib/categoryPipeline.ts`:**
+- `RawTransaction` gains `linked_gl_account?`, `contact_name?`
+- `ProcessedTransaction` gains `is_provisional?`, `linked_gl_account?`, `contact_name?`
+- `processBatch` passes `linkedGlAccount`, `linkedContactName` to RuleContext; sets `is_provisional` from ruleResult
+
+**`src/app/api/admin/reprocess-csv/route.ts`:**
+- Now reads `linked_gl_account, contact_name` from DB
+- Passes them in RuleContext
+- Updates `is_provisional` and `is_transfer` (was category+matched_rule+subscription+classification only)
+
+**`src/app/api/admin/relink-transfers/route.ts`** (new):
+- `POST /api/admin/relink-transfers` — backfill endpoint
+- Finds all linked transfer pairs where BHT side has `gl_account`
+- Writes `linked_gl_account + contact_name` to personal-side row
+- Idempotent; run once after migration then follow with reprocess-csv
+
+**`src/lib/positionAggregation.ts`** (new):
+- Pure function `aggregatePosition(transactions)` → `PositionSummary { periods, totalDrawn, totalProvisional, totalConfirmed }`
+- Groups Director Drawings by YYYY-MM period
+
+**`src/app/dashboard/PositionWidget.tsx`** (new):
+- Server component — fetches Director Drawings transactions from Supabase
+- Renders per-period breakdown with provisional/confirmed split
+- Returns null when no Director Drawings exist (hidden when not relevant)
+
+**Tests:** 966 passing (was 934):
+- 5 new xeroContactParser tests
+- 7 new positionAggregation tests
+- 3 new directorIncome tests (SKIP_TRANSFER_FROM gate)
+- 2 new categories tests (Director Drawings bucket)
+- 9 new merchantCategoryRules tests (3 new rules)
+- 3 new transferLinker tests (gl_account + contact_name propagation)
+- 4 new relinkTransfersRoute tests
+
+**Commit:** `36f2795` — 966 tests passing
+
+**Post-deploy runbook for Director Drawings:**
+```bash
+# 1. Run migration in Supabase SQL editor: scripts/addPositionFoundation.sql
+# 2. Deploy to Vercel (auto from push)
+# 3. Backfill linked_gl_account / contact_name on existing transfer pairs:
+curl -s -X POST "https://app.hearth.money/api/admin/relink-transfers"
+# 4. Reclassify personal-side transfers that are now linked:
+curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"
+# 5. Verify on /transactions: TRANSFER FROM XX5426 COMMBANK APP WAGE → Salary
+#    And: TRANSFER FROM XX5426 (Directors Loan) → Director Drawings, is_provisional=true
+```
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `f846ebe` (unified wipe-and-resync endpoint)
-- 932 tests passing
+- HEAD: `36f2795` (director drawings model + position widget)
+- 966 tests passing
 - Production: https://app.hearth.money
 
 ## Outstanding & next steps

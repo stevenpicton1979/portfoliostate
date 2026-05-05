@@ -1,5 +1,5 @@
 # Hearth App — Session State
-_Last updated: 2026-05-04 (session 7)_
+_Last updated: 2026-05-05 (session 8 — Director Drawings foundation working end-to-end)_
 
 ## What Hearth is
 Personal finance app (Next.js 14 + Supabase + Xero). Tracks household transactions, categorises them, links to Xero for business bank feed. Business transactions come exclusively from Xero. Personal transactions come from CSV bank extracts only. No overlap.
@@ -535,49 +535,49 @@ curl -s -X POST "https://app.hearth.money/api/admin/reprocess-csv"
 #    And: TRANSFER FROM XX5426 (Directors Loan) → Director Drawings, is_provisional=true
 ```
 
+### Director Drawings deploy — seven-bug post-mortem (session 8 continued)
+
+Initial Director Drawings deploy (`36f2795`) shipped clean code but the production runbook returned 0 linked pairs. Took seven sequential bug fixes to make the foundation actually work end-to-end. Documenting because the lessons are reusable:
+
+1. **Director Income matching internal-transfer descriptions** — `director-income:commbank-app` rule was too greedy; matched "TRANSFER FROM XX2961 COMMBANK APP" and pre-classified as income before transfer detection ran. Fix: SKIP_TRANSFER_FROM gate (already part of `36f2795` schema, but rule order interaction took attention to spot).
+2. **`relink-transfers` route handler too narrow** — only operated on already-linked pairs (`linked_transfer_id IS NOT NULL`) and required `is_transfer = true` on BHT side. Wages Payable rows are Payroll Expense (not transfers), so they were silently excluded. Fix: two-phase backfill that first calls `linkTransferPairs()` then propagates metadata to pre-existing pairs. Commit `ed03963`.
+3. **Linker required is_transfer on BOTH sides of the pair** — same Wages Payable problem at the linker level. Fix: relax to "at least one side has gl_account set." That's the actual signal we want to propagate. Commit `bc5eabe`.
+4. **Supabase 1000-row default cap** — code used `.limit(50000)` but Supabase still capped server-side at 1000. With ~8000 transactions, the linker only saw a slice that happened to contain no candidate pairs. Fix attempt 1: explicitly add `.limit(50000)` everywhere. Commit `375632d`. Didn't fully fix it because…
+5. **`.in('date', dates)` URL length blowing past PostgREST's 8 KB limit** — the linker dedup'd all dates into a JS array (1700+) and passed via `.in()`, generating a query URL too long for PostgREST to accept. Silently returned nothing. Fix: make `dates` parameter optional; full-backfill calls omit dates entirely. Commit `53e474b`.
+6. **Supabase max-rows server config STILL caps at 1000 even with `.limit(50000)`** — the diagnostic endpoint (`/api/admin/linker-diag`) proved this conclusively: returned 1000 rows out of 8069 unlinked. Fix: paginate via `.range(offset, offset + 999)` in 1000-row chunks. Commit `2d32469`. After this: rows_returned matched the unlinked total, candidate_pairs went from 0 to 40.
+7. **`steven_wage_from_bht` rule required contact_name to contain "Steven"** — older Xero raw_descriptions used a different format ("wage Transfer to xx5426 | …") so `parseXeroContactName` extracted the wrong segment. Fix: drop the contact_name check entirely. Justification: only Steven's wages land on personal-side accounts (Finley/Zach personal accounts aren't imported), so any Wages Payable on a personal-side credit is Steven's by elimination.
+
+**Final state:** the canonical 1-of-8 puzzle resolves cleanly. 7 wages → Salary/Steven, 4 drawings → Director Drawings (provisional), 1 outlier (2026-04-11) remains unlinked because BHT side hasn't synced the matching debit yet. Foundation is genuinely complete.
+
+**Reusable lessons:**
+- **`.range()` over `.limit()` for any "fetch all" Supabase query.** On hosted Supabase, `.limit(N>1000)` does NOT bypass the server-side max-rows config. Use `.range(offset, offset + 999)` in a paginated loop until a page returns fewer than 1000 rows. Apply this idiom proactively to any future routes that touch transactions/accounts wholesale.
+- **The diagnostic-endpoint pattern is a powerful debugging tool.** When `linkTransferPairs` returned 0 despite SQL showing 30+ candidate pairs, a 30-line `/api/admin/linker-diag` endpoint revealed `rows_returned: 1000` in seconds — finally pointed at the Supabase row cap. Worth keeping the pattern in the toolkit: a tiny ad-hoc route that introspects what production code actually sees, deployed temporarily, deleted after diagnosis.
+- **Don't trust `.limit()` to mean "fetch up to N rows."** Always verify with a count query or a diagnostic on production data before assuming.
+- **PostgREST has a ~8 KB URL length limit.** `.in()` with 1000+ values silently truncates. For backfills, fetch all rows by primary filters and group in-memory.
+
+**Cleanup:** diagnostic endpoint at `/api/admin/linker-diag` deleted after the chain resolved.
+
 ## Git state
 - Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: `36f2795` (director drawings model + position widget)
-- 966 tests passing
+- HEAD: post-session-8 (Director Drawings foundation + seven-bug fixes + diagnostic endpoint deleted)
+- ~975 tests passing
 - Production: https://app.hearth.money
 
 ## Outstanding & next steps
 
-**Migrations status:** All four required migrations have been documented in
-`scripts/`. As of `1fd3aa5` Steven has run them in production (otherwise the
-908-tests-passing dashboard fix wouldn't be visibly working). If a new
-session opens fresh, double-check by querying for the
-`subscription_merchants`, `subscriptions.cancelled_at`, and `Bank Fees`
-category presence before assuming.
+**Migrations status:** All required migrations have been run in production. Director Drawings foundation (`scripts/addPositionFoundation.sql`) is live. As of session 8 close, the 1-of-8 wage/drawing puzzle resolves correctly, $130k of phantom income is gone from the dashboard, the Position widget renders with real numbers.
 
-**Post-deploy steps for Batch 6 + wipe-and-resync (after Vercel deploys `f846ebe`):**
-```bash
-curl -s -X POST "https://app.hearth.money/api/admin/wipe-and-resync?confirm=true"
-```
-Then verify the JSON response: `ok: true`, all accounts `status: 'ok'` or `'info'`, and check /transactions: AldiMobile → Internet & Phone, Bank Transfer to Mastercard → Transfer.
+**Likely next work:**
+- **Year-end reclassification UI** — the `is_provisional` flag is now reliably set on Director Drawings. Build a `/year-end` (or `/dev/year-end`) page that lists provisional drawings for an FY and lets Steven bulk-classify each as Director Income (Steven), Director Income (Nicola), Director's Loan, Wage, or Reimbursement. Once classified, `is_provisional` flips to false.
+- **2026-04-11 outlier** — the single $4k personal-side credit that didn't link. Likely Xero hasn't synced the matching BHT-side debit yet. Worth a quick verification on next sync; if it persists, consider relaxing the linker's exact-date matching to a ±1-day tolerance.
+- **Run `npx tsx scripts/generateCoverageFixture.ts`** to replace the hand-seeded coverage fixture with the real production merchant set. Strengthens the regression test against actual production data rather than canaries.
+- **Cancelled-subscription "still charging" warnings** — when a cancelled subscription's merchants keep producing transactions, they currently fall back into Detected Candidates. Should be loudly flagged on the cancelled subscription itself.
+- **Auto-cancel automation and "renewals in 7 days" widget** — both depend on the subscription relational model that's now in place. Greenfield work whenever ready.
+- **`merchant_mappings` cleanup** — ~990 stale `source = 'auto'` rows pollute the /mappings UI. They're inert (pipeline only consults `source = 'manual'`) but cluttering. One-line cleanup: `DELETE FROM merchant_mappings WHERE source = 'auto'`.
 
-**Likely next work (open at end of session 7):**
-- Run the post-deploy curl above once Vercel is live.
-- Validate the dashboard widget in production: HCF Health Insurance shows
-  once with combined cadence, OCT-DEC 2025 no longer appears.
-- Run `npx tsx scripts/generateCoverageFixture.ts` to replace the
-  hand-seeded coverage fixture with the real production merchant set
-  (mentioned earlier as still pending; it would meaningfully strengthen
-  the regression test).
-- Surface "still charging despite cancellation" warnings: a cancelled
-  subscription whose merchants keep producing transactions should appear
-  somewhere visible (currently they fall back into Detected Candidates,
-  which is functional but not loud about the contradiction).
-- Auto-cancel automation and "renewals in 7 days" widget — both depend
-  on the relational model that's now in place. Greenfield work whenever
-  ready.
+**Manual cleanup:** the 6 truly-ambiguous PTY LTDs (TFAP, TEJGON, H C KALYAN, TEAM COOPS, LASHAND, BRINCO2005) should be classified via `/mappings` UI as more transactions accumulate. They are currently in `EXPECTED_UNMATCHED` in `coverageRegression.test.ts`.
 
-**Manual cleanup:** the 6 truly-ambiguous PTY LTDs (TFAP, TEJGON,
-H C KALYAN, TEAM COOPS, LASHAND, BRINCO2005) should be classified via
-`/mappings` UI as more transactions accumulate. They are currently in
-`EXPECTED_UNMATCHED` in `coverageRegression.test.ts`.
-
-## Operational notes (lessons accumulated through session 5)
+## Operational notes (lessons accumulated through session 8)
 
 - **Git workflow:** commit + push from Windows Git Bash (`/c/dev/...` paths
   with forward slashes — `\d`, `\p`, `\h` are escape sequences in Bash).
@@ -597,3 +597,20 @@ H C KALYAN, TEAM COOPS, LASHAND, BRINCO2005) should be classified via
   and design discussion. Claude Code is best for heavy code work because
   it runs natively on Steven's filesystem (no sandbox/Windows divergence,
   no Edit-tool corruption, native `npm test` and `next build`).
+- **`.range()` not `.limit()` for "fetch all" Supabase queries.** Hosted Supabase
+  caps at 1000 rows server-side regardless of `.limit(N)`. Use
+  `.range(offset, offset + 999)` in a paginated loop until a page returns
+  fewer than 1000 rows. Already applied in `transferLinker.ts`,
+  `relink-transfers/route.ts`, `reprocess-csv/route.ts`,
+  `dev/rule-impact/route.ts`. Apply proactively to any new "fetch all"
+  query against transactions/accounts at scale.
+- **`.in('date', dates)` with 1000+ values exceeds PostgREST's ~8 KB URL
+  limit.** Either keep the dates list small (used for incremental sync only)
+  or fetch by primary filters and group in-memory.
+- **Diagnostic-endpoint pattern for debugging production-only issues.** When a
+  function returns 0 in production but SQL says it should return non-zero,
+  build a tiny ad-hoc `/api/admin/<thing>-diag` endpoint that reproduces
+  the function's exact query and returns row counts + sample data. Deploy
+  temporarily, hit it, paste the response, delete the endpoint after
+  diagnosis. This pattern broke the seven-bug Director Drawings impasse
+  in seconds after five blind fix attempts. Worth the 30 lines of code.

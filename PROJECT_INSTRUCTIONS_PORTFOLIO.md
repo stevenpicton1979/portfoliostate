@@ -14,7 +14,7 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount C:\dev\portfoliostate
+1. Mount ~/Projects/portfoliostate
 2. Read STATE_PORTFOLIO.md and all STATE_*.md files directly from filesystem
 3. Mount additional product repos as needed for the task
 
@@ -38,7 +38,7 @@ Changing ZoneIQ's API response shape can break all three downstream consumers. C
 
 ## State management
 
-All state lives in C:\dev\portfoliostate (repo: stevenpicton1979/portfoliostate).
+All state lives in ~/Projects/portfoliostate (repo: stevenpicton1979/portfoliostate).
 
 Read state files directly from filesystem (local copy is authoritative for interactive sessions). Per-product state files:
 - PropertyData → STATE_PROPERTYDATA.md
@@ -50,7 +50,7 @@ Read state files directly from filesystem (local copy is authoritative for inter
 
 After completing work, push only the files you changed:
 ```
-cd C:\dev\portfoliostate
+cd ~/Projects/portfoliostate
 git add STATE_{PRODUCT}.md
 git commit -m "state: {product} session update"
 git push

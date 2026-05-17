@@ -14,8 +14,8 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount both folders: C:\dev\buyerside and C:\dev\portfoliostate
-2. Read C:\dev\portfoliostate\STATE_CLEAROFFER.md directly from filesystem
+1. Mount both folders: ~/Projects/buyerside and ~/Projects/portfoliostate
+2. Read ~/Projects/portfoliostate\STATE_CLEAROFFER.md directly from filesystem
 
 ## Stack
 
@@ -30,11 +30,11 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## State management
 
-State file: C:\dev\portfoliostate\STATE_CLEAROFFER.md
+State file: ~/Projects/portfoliostate\STATE_CLEAROFFER.md
 
 After completing work, update and push:
 ```
-cd C:\dev\portfoliostate
+cd ~/Projects/portfoliostate
 git add STATE_CLEAROFFER.md
 git commit -m "state: ClearOffer session update"
 git push

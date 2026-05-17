@@ -558,7 +558,7 @@ Initial Director Drawings deploy (`36f2795`) shipped clean code but the producti
 **Cleanup:** diagnostic endpoint at `/api/admin/linker-diag` deleted after the chain resolved.
 
 ## Git state
-- Repo: `C:\dev\personal-assistant\hearth-app` | Branch: main | pushed
+- Repo: `~/Projects/personal-assistant\hearth-app` | Branch: main | pushed
 - HEAD: post-session-8 (Director Drawings foundation + seven-bug fixes + diagnostic endpoint deleted)
 - ~975 tests passing
 - Production: https://app.hearth.money

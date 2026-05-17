@@ -91,7 +91,7 @@
 ## How to start a new session with full context
 
 **Single product session** (e.g. PropertyData work):
-Open a new chat, select C:\dev\portfoliostate, and say:
+Open a new chat, select ~/Projects/portfoliostate, and say:
 "Read STATE_PROPERTYDATA.md before we start. I'm Steve, building a PropTech portfolio."
 
 Replace the filename with whichever product you're working on:

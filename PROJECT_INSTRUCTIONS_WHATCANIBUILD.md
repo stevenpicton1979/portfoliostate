@@ -14,8 +14,8 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount both folders: C:\dev\whatcanibuild and C:\dev\portfoliostate
-2. Read C:\dev\portfoliostate\STATE_WHATCANIBUILD.md directly from filesystem
+1. Mount both folders: ~/Projects/whatcanibuild and ~/Projects/portfoliostate
+2. Read ~/Projects/portfoliostate\STATE_WHATCANIBUILD.md directly from filesystem
 
 ## Stack
 
@@ -29,11 +29,11 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## State management
 
-State file: C:\dev\portfoliostate\STATE_WHATCANIBUILD.md
+State file: ~/Projects/portfoliostate\STATE_WHATCANIBUILD.md
 
 After completing work, update and push:
 ```
-cd C:\dev\portfoliostate
+cd ~/Projects/portfoliostate
 git add STATE_WHATCANIBUILD.md
 git commit -m "state: WhatCanIBuild session update"
 git push

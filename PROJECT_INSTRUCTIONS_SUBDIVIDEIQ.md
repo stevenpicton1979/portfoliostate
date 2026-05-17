@@ -14,9 +14,9 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount C:\dev\portfoliostate
-2. Read C:\dev\portfoliostate\SUBDIVIDEIQ.md (product brief), SUBDIVIDEIQ_BACKLOG.md, and SUBDIVIDEIQ_DATA_SOURCES.md
-3. When the repo is created, also mount C:\dev\subdivideiq
+1. Mount ~/Projects/portfoliostate
+2. Read ~/Projects/portfoliostate\SUBDIVIDEIQ.md (product brief), SUBDIVIDEIQ_BACKLOG.md, and SUBDIVIDEIQ_DATA_SOURCES.md
+3. When the repo is created, also mount ~/Projects/subdivideiq
 
 ## Product overview
 

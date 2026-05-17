@@ -14,8 +14,8 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount both folders: C:\dev\propertydata and C:\dev\portfoliostate
-2. Read C:\dev\portfoliostate\STATE_PROPERTYDATA.md directly from filesystem (do not git fetch — local copy is authoritative for interactive sessions)
+1. Mount both folders: ~/Projects/propertydata and ~/Projects/portfoliostate
+2. Read ~/Projects/portfoliostate\STATE_PROPERTYDATA.md directly from filesystem (do not git fetch — local copy is authoritative for interactive sessions)
 3. Note the "last known good commit" in the state file — use this for recovery if things break
 
 ## Stack
@@ -29,11 +29,11 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## State management
 
-State file: C:\dev\portfoliostate\STATE_PROPERTYDATA.md
+State file: ~/Projects/portfoliostate\STATE_PROPERTYDATA.md
 
 After completing work, update the state file (including "last known good commit" if you deployed) and push:
 ```
-cd C:\dev\portfoliostate
+cd ~/Projects/portfoliostate
 git add STATE_PROPERTYDATA.md
 git commit -m "state: PropertyData session update"
 git push
@@ -108,4 +108,4 @@ Windows mount sync has truncated this file at least 3 times, shipping broken sit
 - NoteReady: NDIS progress note writer (non-PropTech, in design)
 - SubdivideIQ: subdivision feasibility tool (in design)
 
-State files for other products live in C:\dev\portfoliostate but never write to them from a PropertyData session.
+State files for other products live in ~/Projects/portfoliostate but never write to them from a PropertyData session.

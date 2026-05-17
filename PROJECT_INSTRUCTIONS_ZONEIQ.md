@@ -14,8 +14,8 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount both folders: C:\dev\zoneiq and C:\dev\portfoliostate
-2. Read C:\dev\portfoliostate\STATE_ZONEIQ.md directly from filesystem
+1. Mount both folders: ~/Projects/zoneiq and ~/Projects/portfoliostate
+2. Read ~/Projects/portfoliostate\STATE_ZONEIQ.md directly from filesystem
 
 ## Stack
 
@@ -30,11 +30,11 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## State management
 
-State file: C:\dev\portfoliostate\STATE_ZONEIQ.md
+State file: ~/Projects/portfoliostate\STATE_ZONEIQ.md
 
 After completing work, update and push:
 ```
-cd C:\dev\portfoliostate
+cd ~/Projects/portfoliostate
 git add STATE_ZONEIQ.md
 git commit -m "state: ZoneIQ session update"
 git push

@@ -14,9 +14,9 @@ You have my complete trust. Never ask for confirmation. Never pause for approval
 
 ## Session startup
 
-1. Mount C:\dev\portfoliostate
-2. Read C:\dev\portfoliostate\NOTEREADY.md (product brief) and C:\dev\portfoliostate\NOTEREADY_BACKLOG.md
-3. When the repo is created, also mount C:\dev\noteready
+1. Mount ~/Projects/portfoliostate
+2. Read ~/Projects/portfoliostate\NOTEREADY.md (product brief) and ~/Projects/portfoliostate\NOTEREADY_BACKLOG.md
+3. When the repo is created, also mount ~/Projects/noteready
 
 ## Product overview
 

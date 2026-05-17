@@ -17,13 +17,13 @@ Per-product state files:
 - Portfolio     → STATE_PORTFOLIO.md (human-written only, do not write)
 
 Before reading ANY state file:
-  git -C C:\dev\portfoliostate fetch origin
-  git -C C:\dev\portfoliostate reset --hard origin/main
+  git -C ~/Projects/portfoliostate fetch origin
+  git -C ~/Projects/portfoliostate reset --hard origin/main
 
 This is mandatory. Never skip it. It takes 2 seconds and prevents acting on stale state.
 
 When writing state at session end:
-  cd C:\dev\portfoliostate
+  cd ~/Projects/portfoliostate
   git add STATE_[PRODUCT].md
   git commit -m "state: [product] session update [date]"
   git push

@@ -78,7 +78,7 @@
 DEPENDENCY FINDING:
 Mechanism: HTTP POST to PropertyData /api/lookup endpoint (PROPERTYDATA_URL env var, default localhost:3002). Auth via Bearer token (PROPERTYDATA_SECRET). Single bridge module: buyerside/api/lib/propertydata-client.js
 ClearOffer consumes: POST /api/lookup { address, tier: "free"|"paid" } → flat fields array. Fields used: zone_code, zone_name, flood_creek_fpa, flood_river_fpa, flood_overland_flow, flood_aep_1pct, flood_2011, flood_2022, school_primary, school_secondary, school_primary_icsea, school_secondary_icsea, bushfire_hazard, heritage_listing, character_overlay, koala_habitat, acid_sulfate, biodiversity, waterway_corridor, wetlands, petroleum_pipeline, road_hierarchy, hv_powerline, hv_easement, aircraft_noise_anef, lot_plan, lot_area, derived_road_type
-Contract document: C:\dev\propertydata\DATA_SOURCES_v2.md (Section 4: Architecture, response shape definition)
+Contract document: ~/Projects/propertydata\DATA_SOURCES_v2.md (Section 4: Architecture, response shape definition)
 Risk — PropertyData changing ClearOffer: Renaming any field key (e.g. flood_creek_fpa → flood_creek), changing value types (e.g. boolean → object for flood_overland_flow), removing fields, or changing the fields array structure would silently break ClearOffer's propertydata-client.js mapping
 Risk — ClearOffer assuming wrong shape: ClearOffer hardcodes field key names and value types in propertydata-client.js. If PropertyData adds new flood fields (as in Sprint 4.2.2) but ClearOffer's mapping isn't updated, the new data is silently dropped. ClearOffer also assumes council is always null and state is always QLD.
 ```

@@ -4,7 +4,7 @@
 - Live: https://finance-tracker-red-delta.vercel.app
 - Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS + Vercel + Supabase
 - Supabase project: dqzqqfcepsqhaxovneen (Pro tier)
-- Local dev path: C:\dev\personal-assistant\Finance Tracker
+- Local dev path: ~/Projects/personal-assistant\Finance Tracker
 
 ## What It Does
 Replaces the old Python/Excel finance workflow. Reads CBA bank CSV exports, cleans merchant names, stores transactions in Supabase, and provides a web UI for reviewing, categorising, and analysing expenses.
@@ -41,7 +41,7 @@ TRANSFER TO/FROM, FAST TRANSFER, WDL ATM, MYCARD CREDIT, CITIBANK CREDIT, TAX OF
 - ~595 transactions imported from 4 CSV files
 - 201 unique merchants detected; 193 auto-categorised by LLM (96%)
 - Existing finance_tags.json mappings migrated via scripts/migrate-tags.ts
-- Bank extract CSVs: C:\dev\personal-assistant\BankExtracts\
+- Bank extract CSVs: ~/Projects/personal-assistant\BankExtracts\
 
 ## Environment Variables (all in Vercel — never in .env files)
 - NEXT_PUBLIC_SUPABASE_URL

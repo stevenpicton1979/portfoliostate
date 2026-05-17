@@ -557,10 +557,58 @@ Initial Director Drawings deploy (`36f2795`) shipped clean code but the producti
 
 **Cleanup:** diagnostic endpoint at `/api/admin/linker-diag` deleted after the chain resolved.
 
+### Year-end reclassification UI (done ✅, session 9)
+
+Closed the loop on Director Drawings: the foundation now flags provisional draws, and `/year-end` lets Steven flip each one to its final classification without touching Supabase by hand.
+
+**New files:**
+- `src/lib/yearEnd.ts` — pure helpers: FY date math, 5 classification payload builders, revert payload, `summarizeRows`, `classificationFromMatchedRule`
+- `src/lib/__tests__/yearEnd.test.ts` — 31 unit tests
+- `src/app/api/year-end/provisional/route.ts` — GET, returns rows + summary for the requested FY
+- `src/app/api/year-end/provisional/__tests__/route.test.ts` — 7 route tests
+- `src/app/api/year-end/classify/route.ts` — POST, applies a classification (or `revert`) to one or many IDs in a single atomic update
+- `src/app/api/year-end/classify/__tests__/route.test.ts` — 15 route tests
+- `src/app/year-end/page.tsx` — server component, fetches the FY's Director Drawings
+- `src/app/year-end/YearEndClient.tsx` — client component: FY selector, summary card, classification breakdown, table with per-row classify dropdown, bulk classify bar, per-row revert
+
+**Modified files:**
+- `src/components/nav/navItems.ts` + `Sidebar.tsx` + `BottomNav.tsx` — added Year-End nav entry with `calendar` icon
+- `src/app/dashboard/PositionWidget.tsx` — added a "Review →" link that only renders when provisional > 0
+
+**Classification matrix (verbatim from plan):**
+
+| Classification           | `category`           | `owner`  | `is_income` | `is_transfer` | `is_provisional` | `matched_rule`                          |
+| ------------------------ | -------------------- | -------- | ----------- | ------------- | ---------------- | --------------------------------------- |
+| Director Income (Steven) | `'Director Income'`  | `Steven` | `true`      | `false`       | `false`          | `'year-end:director-income:steven'`     |
+| Director Income (Nicola) | `'Director Income'`  | `Nicola` | `true`      | `false`       | `false`          | `'year-end:director-income:nicola'`     |
+| Wage (Steven)            | `'Salary'`           | `Steven` | `true`      | `false`       | `false`          | `'year-end:wage:steven'`                |
+| Director's Loan          | `null`               | `Joint`  | `null`      | `true`        | `false`          | `'year-end:directors-loan'`             |
+| Reimbursement            | `null`               | `Joint`  | `null`      | `true`        | `false`          | `'year-end:reimbursement'`              |
+
+Revert restores `category='Director Drawings', owner='Joint', is_income=null, is_transfer=false, is_provisional=true, matched_rule='merchant:bht_directors_loan_to_joint'` — the exact provisional state the foundation rule produces.
+
+**Test count:** 966 → 1029 (+63: 31 lib + 7 GET + 15 POST + 10 other adjacent tests touched during refactor).
+
+**Commits (pushed to origin/main):**
+- `55a6be6` feat(year-end): pure FY helpers + classification payload builders
+- `b80d514` feat(year-end): GET /api/year-end/provisional
+- `0427a73` feat(year-end): POST /api/year-end/classify
+- `1ca34de` feat(year-end): page UI with FY selector, classify, bulk, revert
+- `920aafa` feat(year-end): add Year-End to sidebar nav
+- `b616fb7` feat(year-end): link to /year-end from PositionWidget
+
+**No DB migration required.** `matched_rule` doubles as audit trail (`year-end:*` prefix).
+
+**Outstanding decisions for Steve:**
+- **Wage (Nicola)** — deliberately omitted. Nicola's wages come from QLD Department of Education direct deposit, not BHT. If a Nicola BHT wage ever lands, classify via `/transactions` for now. Add a 6th button if it becomes routine.
+- **Audit trail (`confirmed_at` / `confirmed_by`)** — not captured. Only `matched_rule` records what happened. Trivial 1-line schema change + 1-line API change to add if Steve wants timestamps.
+- **Locking an FY** — no lock. After year-end sign-off you could in principle re-classify forever. Future work if needed.
+- **Bulk revert** — the POST endpoint supports `classification: 'revert'` for an array of IDs, but the UI only surfaces revert per-row. Bulk revert is one option in the dropdown away.
+
 ## Git state
-- Repo: `~/Projects/personal-assistant\hearth-app` | Branch: main | pushed
-- HEAD: post-session-8 (Director Drawings foundation + seven-bug fixes + diagnostic endpoint deleted)
-- ~975 tests passing
+- Repo: `~/Projects/personal-assistant/hearth-app` | Branch: main | pushed
+- HEAD: `b616fb7` (post-session-9 — year-end reclassification UI shipped)
+- 1029 tests passing (43 test files)
 - Production: https://app.hearth.money
 
 ## Outstanding & next steps
@@ -568,7 +616,6 @@ Initial Director Drawings deploy (`36f2795`) shipped clean code but the producti
 **Migrations status:** All required migrations have been run in production. Director Drawings foundation (`scripts/addPositionFoundation.sql`) is live. As of session 8 close, the 1-of-8 wage/drawing puzzle resolves correctly, $130k of phantom income is gone from the dashboard, the Position widget renders with real numbers.
 
 **Likely next work:**
-- **Year-end reclassification UI** — the `is_provisional` flag is now reliably set on Director Drawings. Build a `/year-end` (or `/dev/year-end`) page that lists provisional drawings for an FY and lets Steven bulk-classify each as Director Income (Steven), Director Income (Nicola), Director's Loan, Wage, or Reimbursement. Once classified, `is_provisional` flips to false.
 - **2026-04-11 outlier** — the single $4k personal-side credit that didn't link. Likely Xero hasn't synced the matching BHT-side debit yet. Worth a quick verification on next sync; if it persists, consider relaxing the linker's exact-date matching to a ±1-day tolerance.
 - **Run `npx tsx scripts/generateCoverageFixture.ts`** to replace the hand-seeded coverage fixture with the real production merchant set. Strengthens the regression test against actual production data rather than canaries.
 - **Cancelled-subscription "still charging" warnings** — when a cancelled subscription's merchants keep producing transactions, they currently fall back into Detected Candidates. Should be loudly flagged on the cancelled subscription itself.

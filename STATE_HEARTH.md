@@ -614,3 +614,5 @@ Initial Director Drawings deploy (`36f2795`) shipped clean code but the producti
   temporarily, hit it, paste the response, delete the endpoint after
   diagnosis. This pattern broke the seven-bug Director Drawings impasse
   in seconds after five blind fix attempts. Worth the 30 lines of code.
+
+_Dev environment migrated to Mac mini: 2026-05-17_
